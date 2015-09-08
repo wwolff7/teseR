@@ -1,0 +1,88 @@
+## Definição dos parâmetros 
+## MAM Mu
+
+lambda.mu.MAM <--0.2363636364
+tau2.mu.MAM <- 0.009766990837
+sigma2.mu.MAM <- 0.02958745806
+phi.mu.MAM <-37.41638971
+
+
+## Normalização da variável
+
+MAM.mu <- dados$Param_MAM.mu + 5
+
+(dados$Param_MAM.mu<-(((MAM.mu^(lambda.mu.MAM)) - 1)/lambda.mu.MAM)) #normalizando - (X^lambda)-1/lambda
+(MAM.mu.inv<-(((lambda.mu.MAM*dados$Param_MAM.mu)+1)^(1/lambda.mu.MAM))-5) #inverter e diminuir com 5 para encontrar a varivel original
+
+
+## Calcular a matrix R de semivariância entre os dados
+dados
+R <- as.matrix(tau2.mu.MAM+(sigma2.mu.MAM*(1-exp(-d^2/phi.mu.MAM^2))));colnames(R) <- NULL;R
+
+## R1 <- cbind(R,rep(1,l=nrow(R))
+## Acrescenter uma linha e coluna de 1 "Langrangeano"
+R.ko <- rbind(cbind(R,rep(1,l=nrow(R))),c(rep(1,l=nrow(R)),0));R.ko
+
+## calcular o vetor de correlação entre os dados e o ponto a ser predito
+r0 <- rbind(as.matrix(tau2.mu.MAM+(sigma2.mu.MAM*(1-exp(-do^2/phi.mu.MAM^2)))),1);r0
+
+## calcular a Matriz inversa de R.ko
+R.ko.inv <- solve(R.ko)
+
+## Determinar os Pesos
+(W.ko <- R.ko.inv%*%r0)
+
+sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1 
+
+## O ultimo valor não é peso, é multiplicador de Lagrange
+(W.ko1 <- W.ko[-length(r0)])
+
+## Predição
+
+
+(mu.MAM.ko <- sum(dados$Param_MAM.mu*W.ko1))
+mu.inv<-(((lambda.mu.MAM*mu.MAM.ko)+1)^(1/lambda.mu.MAM))-5 #inverter e diminuir com 5 para encontrar a varivel original
+mu.inv
+
+##-----------------------------------------------------------------------------##
+
+
+## Definição dos parâmetros 
+## MAM sigma
+
+tau2.sig.MAM   <- 0
+sigma2.sig.MAM <-0.01222677729
+phi.sig.MAM    <-13.83543817
+
+
+## Calcular a matrix R de semivariância entre os dados
+dados
+R <- as.matrix(tau2.sig.MAM+(sigma2.sig.MAM*(1-exp(-d^2/phi.sig.MAM^2))));colnames(R) <- NULL;R
+
+## KO das variáveis externas 
+
+## R1 <- cbind(R,rep(1,l=nrow(R))
+## Acrescenter uma linha e coluna de 1 "Langrangeano"
+R.ko <- rbind(cbind(R,rep(1,l=nrow(R))),c(rep(1,l=nrow(R)),0));R.ko
+
+## calcular o vetor de correlação entre os dados e o ponto a ser predito
+r0 <- rbind(as.matrix(tau2.sig.MAM+(sigma2.sig.MAM*(1-exp(-do^2/phi.sig.MAM^2)))),1);r0
+
+## calcular a Matriz inversa de R.ko
+R.ko.inv <- solve(R.ko)
+
+## Determinar os Pesos
+(W.ko <- R.ko.inv%*%r0)
+
+sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1 
+
+## O ultimo valor não é peso, é multiplicador de Lagrange
+(W.ko1 <- W.ko[-length(r0)])
+
+## Predição
+
+(Sigma.MAM.ko <- sum(dados$Param_MAM.sigma*W.ko1))
+
+
+
+
