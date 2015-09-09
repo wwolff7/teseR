@@ -6,16 +6,22 @@ require(maptools)
 library(rgdal)
 library(raster)
 require(SDMTools) # para legend.gradient
+<<<<<<< HEAD
 library(extrafont)
 loadfonts()
+=======
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 getwd()
 setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/Mapas")
 ## rm(list = ls()) ## Para remover todos os objetos
 
 options(OutDec=",",digits=10,scipen=5)
+<<<<<<< HEAD
 par(mar = c(4,4,0.1,0.1))
 plot(1)
+=======
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 ##-----------------------------------------------------------------------------##
 ## Funções para colocar Norte e legenda nos mapas
 
@@ -118,25 +124,39 @@ VR <- mask(raster("Rasters/VrQfmax.ascii",crs=proj),limite)
 color_cota<-colorRampPalette(c(rgb(1,1,0),rgb(0,1,0),rgb(0,1,1),rgb(0,0,1),rgb(1,0,1),rgb(1,0,0)))(255)
 color_hidro <- brewer.pal(9,"Blues")
 
+<<<<<<< HEAD
 #tikz("Figuras/DEM.tex",width=15/2.54, height=12/2.54)
 
 pdf("Figuras/DEM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
 par(mar = c(4,4,0.1,1.5))
+=======
+tikz("Figuras/DEM.tex",width=18/2.54, height=18/2.54)
+#postscript("Figuras/DEM.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 image(Cota,col=color_cota,asp = 1,xlab = "",ylab = "")
 plot(limite,add=T,cex=2)
 
 legend("bottomleft",
        legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+<<<<<<< HEAD
     title="Legenda", bg="white", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,border = "white")
 
 legend(2e5,6.93e6, legend = c(0,366.2,732.4,1098.6,1464.8,1831), fill =
     c(rgb(1,1,0),rgb(0,1,0),rgb(0,1,1),rgb(0,0,1),rgb(1,0,1),rgb(1,0,0)),border = "white", cex =0.8,
+=======
+    title="Legenda", bg="white", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1,border = "white")
+
+legend(2e5,6.93e6, legend = c(0,366.2,732.4,1098.6,1464.8,1831), fill =
+    c(rgb(1,1,0),rgb(0,1,0),rgb(0,1,1),rgb(0,0,1),rgb(1,0,1),rgb(1,0,0)),border = "white", cex =1,
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 bg = "white",title="Cotas (m)",bty = "n")
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
 
+<<<<<<< HEAD
 text(5.5e5, 6.72e6, "0", cex= 0.8)
 text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
@@ -145,6 +165,14 @@ embed_fonts("Figuras/DEM.pdf",outfile = "Figuras/DEM.pdf")
 
 
 pdf("Figuras/QmANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family= "CM Roman")
+=======
+text(5.5e5, 6.72e6, "0", cex= 1)
+text(7.5e5, 6.72e6, "200 km", cex= 1)
+
+dev.off()
+
+postscript("Figuras/QmANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(QmANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(QmANO,add = T)
@@ -156,7 +184,11 @@ legend("bottomleft",
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(QmANO),2),round(maxValue(QmANO),2)),title =
+<<<<<<< HEAD
     expression(bar(Q)~(m^{3}*s^{-1}*km^{-2}*10^{-3})),cex=0.8)
+=======
+    expression(bar(Q)~(m^{3}*s^{-1}*km^{-2}*10^{-3})),cex=1)
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -165,11 +197,16 @@ text(5.5e5, 6.72e6, "0", cex= 0.8)
 text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
+<<<<<<< HEAD
 embed_fonts("Figuras/QmANO.pdf",outfile = "Figuras/QmANO.pdf")
 
 
 pdf("Figuras/VR.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+
+postscript("Figuras/VR.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(VR,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(VR,add = T)
@@ -181,7 +218,11 @@ legend("bottomleft",
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(VR),2),round(maxValue(VR),2)),title =
+<<<<<<< HEAD
     expression(V[r]~(m^{3}*km^{-2}*10^{5})),cex=0.8)
+=======
+    expression(V[r]~(m^{3}*km^{-2}*10^{5})),cex=1)
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -190,11 +231,17 @@ text(5.5e5, 6.72e6, "0", cex= 0.8)
 text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
+<<<<<<< HEAD
 embed_fonts("Figuras/VR.pdf",outfile = "Figuras/VR.pdf")
 
 
 pdf("Figuras/Q98ANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+
+
+postscript("Figuras/Q98ANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(Q98ANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98ANO,add = T)
@@ -215,11 +262,16 @@ text(5.5e5, 6.72e6, "0", cex= 0.8)
 text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
+<<<<<<< HEAD
 embed_fonts("Figuras/Q98ANO.pdf",outfile = "Figuras/Q98ANO.pdf")
 
 
 pdf("Figuras/Q98DJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+
+postscript("Figuras/Q98DJF.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(Q98DJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98DJF,add = T)
@@ -242,8 +294,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/Q98MAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/Q98MAM.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(Q98MAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98MAM,add = T)
@@ -266,8 +322,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/Q98JJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/Q98JJA.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(Q98JJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98JJA,add = T)
@@ -290,8 +350,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/Q98SON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/Q98SON.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(Q98SON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98SON,add = T)
@@ -314,8 +378,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
  
+<<<<<<< HEAD
 pdf("Figuras/MuANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MuANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(MuANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuANO,add = T)
@@ -337,8 +405,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
 
+<<<<<<< HEAD
 pdf("Figuras/MuDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MuDJF.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(MuDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuDJF,add = T)
@@ -361,8 +433,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/MuMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MuMAM.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(MuMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuMAM,add = T)
@@ -385,8 +461,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/MuJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MuJJA.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(MuJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuJJA,add = T)
@@ -409,8 +489,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/MuSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MuSON.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(MuSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuSON,add = T)
@@ -434,8 +518,12 @@ dev.off()
 
 
 
+<<<<<<< HEAD
 pdf("Figuras/SigmaANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/SigmaANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(SigmaANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaANO,add = T)
@@ -457,8 +545,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
 
+<<<<<<< HEAD
 pdf("Figuras/SigmaDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/SigmaDJF.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(SigmaDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaDJF,add = T)
@@ -481,8 +573,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/SigmaMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/SigmaMAM.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(SigmaMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaMAM,add = T)
@@ -505,8 +601,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/SigmaJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/SigmaJJA.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(SigmaJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaJJA,add = T)
@@ -529,8 +629,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/SigmaSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/SigmaSON.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(SigmaSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaSON,add = T)
@@ -553,9 +657,14 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 #tikz("Figuras/PluviANO.tex",width=15/2.54, height=12/2.54)
 pdf("Figuras/PluviANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+
+postscript("Figuras/PluviANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(PluviANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviANO,add = T)
@@ -567,7 +676,11 @@ legend("bottomleft",
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviANO),2),round(maxValue(PluviANO),2)),title =
+<<<<<<< HEAD
     "Precipitação Anual (mm)",cex=0.8)
+=======
+    "Precipitação Anual (mm)",cex=1)
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -576,11 +689,18 @@ text(5.5e5, 6.72e6, "0", cex= 0.8)
 text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
+<<<<<<< HEAD
 embed_fonts("Figuras/PluviANO.pdf",outfile = "Figuras/PluviANO")
 
 
 pdf("Figuras/PluviDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+
+
+
+postscript("Figuras/PluviDJF.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(PluviDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviDJF,add = T)
@@ -603,8 +723,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/PluviMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/PluviMAM.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(PluviMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviMAM,add = T)
@@ -627,8 +751,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/PluviJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/PluviJJA.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(PluviJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviJJA,add = T)
@@ -651,8 +779,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/PluviSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/PluviSON.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(PluviSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviSON,add = T)
@@ -674,8 +806,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
 
+<<<<<<< HEAD
 pdf("Figuras/IEBANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/IEBANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(IEBANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IEBANO,add = T)
@@ -697,8 +833,12 @@ text(7.5e5, 6.72e6, "200 km", cex= 0.8)
 
 dev.off()
 
+<<<<<<< HEAD
 pdf("Figuras/IESANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/IESANO.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 image(IESANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IESANO,add = T)
@@ -728,8 +868,12 @@ dev.off()
 
 ##tikz("Estat.tex", width=12/2.54, height=12/2.54)
 
+<<<<<<< HEAD
 pdf("Figuras/BHs.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/BHs.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 plot(Hidro,col="lightblue",axes = T,asp=1)
 plot(limite,add=T,cex=2)
@@ -753,8 +897,12 @@ legend(2e5,6.815e6, legend=c("Estado de Santa Catarina","Hidrografia","Bacias Hi
 
 dev.off()
 
+<<<<<<< HEAD
 pdf("Figuras/MacroBHs.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/MacroBHs.eps",onefile = T,horizontal = F, width=20/2.54, height=20/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 plot(Hidro,col="lightblue",axes = T,asp=1)
 plot(MBacias,lty=2,add=T,border="red")
@@ -777,8 +925,12 @@ legend(2e5,6.785e6, legend=c("Estado de Santa Catarina","Hidrografia","Bacias Hi
 dev.off()
 
 
+<<<<<<< HEAD
 pdf("Figuras/Estat1.pdf",onefile = T, width=10/2.54, height=10/2.54,paper = "special",family
     = "CM Roman")
+=======
+postscript("Figuras/Estat1.eps",onefile = T,horizontal = F, width=10/2.54, height=10/2.54,paper = "special")
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 
 
 plot(Hidro,col="lightblue",axes = T,asp=1)

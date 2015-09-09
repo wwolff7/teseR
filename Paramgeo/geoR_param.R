@@ -10,7 +10,10 @@ require(maptools)
 require(geoR)
 require(xtable)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 getwd()
 setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/Paramgeo")
 ## rm(list = ls()) ## Para remover todos os objetos
