@@ -2,6 +2,7 @@
 require(tikzDevice)
 require(RColorBrewer) # Para Paletas de cores
 require(maptools)
+library(sp)
 library(rgdal)
 library(raster)
 require(SDMTools) # para legend.gradient
@@ -10,11 +11,11 @@ loadfonts()
 
 getwd()
 setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/Mapas")
-## rm(list = ls()) ## Para remover todos os objetos
-
-options(OutDec=",",digits=10,scipen=5)
+#rm(list = ls()) ## Para remover todos os objetos
+citation("maptools")
+options(OutDec=".",digits=10,scipen=5)
 #par(mar = c(4,4,0.1,0.1))
-plot(1)
+
 ##-----------------------------------------------------------------------------##
 ## Funções para colocar Norte e legenda nos mapas
 
@@ -62,9 +63,16 @@ text(x[c(1,3,5)],y[4],labels=labels,adj=.5,cex=division.cex)
 ## Importando dados
 dir()
 
+map<- get_map(location = 'US', zoom = 4)
+
+map <- get_map('Santa Catarina',zoom = 6,mapty="hybrid")
+ggmap(map)
+qmap('Santa Catarina',zoom = 6,mapty="hybrid")
+
 ## Projeção
 proj <- CRS("+proj=utm +zone=22 +south +ellps=aust_SA +towgs84=-57,1,-41,0,0,0,0 +units=m +no_defs")
 ## lendo dados tipo shapefile
+Sul <- readShapeSpatial("Shapes/Sul_Brasil.shp",proj4string = proj)
 limite <- readShapeSpatial("Shapes/SC_limite.shp",proj4string = proj)
 FluviEST <- readShapeSpatial("Shapes/Fluvi_Estat.shp",proj4string = proj)
 PluviEST <- readShapeSpatial("Shapes/Pluvi_Estat.shp",proj4string = proj)
@@ -73,42 +81,62 @@ Bacias <- readShapeSpatial("Shapes/Bacias/merged/merged.shp",proj4string = proj)
 Centroids <- readShapeSpatial("Shapes/Centroids.shp",proj4string = proj)
 MBacias <- readShapeSpatial("Shapes/Macro_Bacias.shp",proj4string = proj)
 
+
 ## lendo dados tipo Raster
 Cota <- raster("Rasters/cotas.tif")
+Decliv <- terrain(Cota, opt = "slope", unit = "degrees", df=F)
 
-PluviANO <- mask(raster("Rasters/PluviANO.ascii",crs=proj),limite)
-PluviDJF <- mask(raster("Rasters/PluviDJF.ascii",crs=proj),limite)
-PluviMAM <- mask(raster("Rasters/PluviMAM.ascii",crs=proj),limite)
-PluviJJA <- mask(raster("Rasters/PluviJJA.ascii",crs=proj),limite)
-PluviSON <- mask(raster("Rasters/PluviSON.ascii",crs=proj),limite)
+coords <- locator(type="l") 
 
-IESANO <- mask(raster("Rasters/IESANO.ascii",crs=proj),limite)
-IEBANO <- mask(raster("Rasters/IEBANO.ascii",crs=proj),limite)
-IEBDJF <- mask(raster("Rasters/IEBDJF.ascii",crs=proj),limite)
-IEBMAM <- mask(raster("Rasters/IEBMAM.ascii",crs=proj),limite)
-IEBJJA <- mask(raster("Rasters/IEBJJA.ascii",crs=proj),limite)
-IEBSON <- mask(raster("Rasters/IEBSON.ascii",crs=proj),limite)
+MBacias_sub <- MBacias[1:3, ]
 
-MuANO <- mask(raster("Rasters/MuANO.ascii",crs=proj),limite)
-MuDJF <- mask(raster("Rasters/MuDJF.ascii",crs=proj),limite)
-MuMAM <- mask(raster("Rasters/MuMAM.ascii",crs=proj),limite)
-MuJJA <- mask(raster("Rasters/MuJJA.ascii",crs=proj),limite)
-MuSON <- mask(raster("Rasters/MuSON.ascii",crs=proj),limite)
+image(Cota)
+plot(MBacias_sub, add=T)
 
-SigmaANO <- mask(raster("Rasters/SigmaANO.ascii",crs=proj),limite)
-SigmaDJF <- mask(raster("Rasters/SigmaDJF.ascii",crs=proj),limite)
-SigmaMAM <- mask(raster("Rasters/SigmaMAM.ascii",crs=proj),limite)
-SigmaJJA <- mask(raster("Rasters/SigmaJJA.ascii",crs=proj),limite)
-SigmaSON <- mask(raster("Rasters/SigmaSON.ascii",crs=proj),limite)
+extract(Cota, MBacias_sub, fun = mean, na.rm = T, small = T, df = T)
 
-Q98ANO <- mask(raster("Rasters/Q98ANO.ascii",crs=proj),limite)
-Q98DJF <- mask(raster("Rasters/Q98DJF.ascii",crs=proj),limite)
-Q98MAM <- mask(raster("Rasters/Q98MAM.ascii",crs=proj),limite)
-Q98JJA <- mask(raster("Rasters/Q98JJA.ascii",crs=proj),limite)
-Q98SON <- mask(raster("Rasters/Q98SON.ascii",crs=proj),limite)
 
-QmANO <- mask(raster("Rasters/QmANO.ascii",crs=proj),limite)
-VR <- mask(raster("Rasters/VrQfmax.ascii",crs=proj),limite)
+PluviANO <- mask(raster("Rasters/PluviANO.tiff",crs=proj),limite)
+PluviDJF <- mask(raster("Rasters/PluviDJF.tiff",crs=proj),limite)
+PluviMAM <- mask(raster("Rasters/PluviMAM.tiff",crs=proj),limite)
+PluviJJA <- mask(raster("Rasters/PluviJJA.tiff",crs=proj),limite)
+PluviSON <- mask(raster("Rasters/PluviSON.tiff",crs=proj),limite)
+
+IESANO <- mask(raster("Rasters/IESANO.tiff",crs=proj),limite)
+IEBANO <- mask(raster("Rasters/IEBANO.tiff",crs=proj),limite)
+IEBDJF <- mask(raster("Rasters/IEBDJF.tiff",crs=proj),limite)
+IEBMAM <- mask(raster("Rasters/IEBMAM.tiff",crs=proj),limite)
+IEBJJA <- mask(raster("Rasters/IEBJJA.tiff",crs=proj),limite)
+IEBSON <- mask(raster("Rasters/IEBSON.tiff",crs=proj),limite)
+
+MuANO <- mask(raster("Rasters/MuANO.tiff",crs=proj),limite)
+MuDJF <- mask(raster("Rasters/MuDJF.tiff",crs=proj),limite)
+MuMAM <- mask(raster("Rasters/MuMAM.tiff",crs=proj),limite)
+MuJJA <- mask(raster("Rasters/MuJJA.tiff",crs=proj),limite)
+MuSON <- mask(raster("Rasters/MuSON.tiff",crs=proj),limite)
+
+SigmaANO <- mask(raster("Rasters/SigmaANO.tiff",crs=proj),limite)
+SigmaDJF <- mask(raster("Rasters/SigmaDJF.tiff",crs=proj),limite)
+SigmaMAM <- mask(raster("Rasters/SigmaMAM.tiff",crs=proj),limite)
+SigmaJJA <- mask(raster("Rasters/SigmaJJA.tiff",crs=proj),limite)
+SigmaSON <- mask(raster("Rasters/SigmaSON.tiff",crs=proj),limite)
+
+## Mapas de vazões
+## funções
+Qp <- function(mu,sigma,area,p){
+    Qp<-(exp(mu+(sigma*qnorm(1-p))))*area
+}
+
+
+Q98ANO <- Qp(MuANO,SigmaANO,1,0.98)*1000
+Q98DJF <- Qp(MuDJF,SigmaDJF,1,0.98)*1000
+Q98MAM <- Qp(MuMAM,SigmaMAM,1,0.98)*1000
+Q98JJA <- Qp(MuJJA,SigmaJJA,1,0.98)*1000
+Q98SON <- Qp(MuSON,SigmaSON,1,0.98)*1000
+
+QmANO <- mask(raster("Rasters/QmANO.tiff",crs=proj),limite)
+VR <- mask(raster("Rasters/Vr-Qfmax.tiff",crs=proj),limite)
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -119,17 +147,25 @@ color_hidro <- brewer.pal(9,"Blues")
 
 #tikz("Figuras/DEM.tex",width=15/2.54, height=12/2.54)
 
-pdf("Figuras/DEM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+pdf("Figuras/Estat-FluviDEM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
 
 image(Cota,col=color_cota,asp = 1,xlab = "",ylab = "")
-plot(limite,add=T,cex=2)
+plot(Sul,add=T,cex=2)
+#points(PluviEST,col=1,pch=19)
+points(FluviEST,col=1,pch=19)
+
+## legend("bottomleft",
+##        legend=c("States","Rain gauges","Coordinate reference system - UTM ","Datum: SAD/69 Zone 22S"),
+##     title="Legend", bg="white", lty=c(1,NA,NA,NA), pch=c(NA,19,NA,NA),
+##     col=c(1,1,NA,NA), cex = 0.8,border = "white")
 
 legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bg="white", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,border = "white")
+       legend=c("Estados","Estações Fluviométricas","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zona 22S"),
+    title="Legenda", bg="white", lty=c(1,NA,NA,NA), pch=c(NA,19,NA,NA),
+    col=c(1,1,NA,NA), cex = 0.8,border = "white")
 
-legend(2e5,6.93e6, legend = c(0,366.2,732.4,1098.6,1464.8,1831), fill =
+legend(2e5,6.945e6, legend = c(0,366.2,732.4,1098.6,1464.8,1831), fill =
     c(rgb(1,1,0),rgb(0,1,0),rgb(0,1,1),rgb(0,0,1),rgb(1,0,1),rgb(1,0,0)),border = "white", cex =1,
 bg = "white",title="Cotas (m)",bty = "n")
 
@@ -139,9 +175,14 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/DEM.pdf",outfile = "Figuras/DEM.pdf")
+text(5.0e5, 7.2e6, "Paraná", cex= 1,font=2)
+text(5.0e5, 7.015e6, "Santa Catarina", cex= 1,font=2)
+text(4.2e5, 6.85e6, "Rio Grande do Sul", cex= 1,font=2)
+text(7.18e5, 6.77e6, "Oceano atlântico", cex= 1,font=2)
+#text(7.18e5, 6.77e6, "Atlantic ocean", cex= 1,font=2)
 
+dev.off()
+embed_fonts("Figuras/Estat-FluviDEM.pdf",outfile = "Figuras/Estat-FluviDEM.pdf")
 
 pdf("Figuras/QmANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family= "CM Roman")
 
@@ -180,7 +221,7 @@ legend("bottomleft",
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(VR),2),round(maxValue(VR),2)),title =
-    expression(V[r]~(m^{3}*km^{-2}*10^{5})),cex=1)
+    expression(V[r]~(m^{3}*km^{-2}*10^{6})),cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -216,17 +257,22 @@ text(7.5e5, 6.72e6, "200 km", cex= 1)
 dev.off()
 embed_fonts("Figuras/Q98ANO.pdf",outfile = "Figuras/Q98ANO.pdf")
 
-
-pdf("Figuras/Q98DJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+pdf("Figuras/Q98ALL.pdf",onefile = T, width=21/2.54, height=29/2.54,paper = "special",family
     = "CM Roman")
+
+par(mfrow = c(3,2),mar = c(2,2.5,2.5,1.5),mgp = c(1,1,0))
+
+
+##pdf("Figuras/Q98DJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(Q98DJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98DJF,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(a)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.88e6,6.88e6,6.78e6,6.78e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(Q98DJF),2),round(maxValue(Q98DJF),2)),title =
@@ -238,19 +284,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/Q98DJF.pdf",outfile = "Figuras/Q98DJF.pdf")
+##dev.off()
+##embed_fonts("Figuras/Q98DJF.pdf",outfile = "Figuras/Q98DJF.pdf")
 
-pdf("Figuras/Q98MAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##pdf("Figuras/Q98MAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(Q98MAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98MAM,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(b)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.88e6,6.88e6,6.78e6,6.78e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(Q98MAM),2),round(maxValue(Q98MAM),2)),title =
@@ -262,19 +308,20 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/Q98MAM.pdf",outfile = "Figuras/Q98MAM.pdf")
+##dev.off()
+##embed_fonts("Figuras/Q98MAM.pdf",outfile = "Figuras/Q98MAM.pdf")
 
-pdf("Figuras/Q98JJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##pdf("Figuras/Q98JJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(Q98JJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98JJA,add = T)
 plot(limite,add=T,cex=2)
+mtext("(c)",adj=0,line = 0.5, cex=1.5)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.88e6,6.88e6,6.78e6,6.78e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(Q98JJA),2),round(maxValue(Q98JJA),2)),title =
@@ -286,19 +333,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/Q98JJA.pdf",outfile = "Figuras/Q98JJA.pdf")
-
-pdf("Figuras/Q98SON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/Q98JJA.pdf",outfile = "Figuras/Q98JJA.pdf")
+## 
+##pdf("Figuras/Q98SON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(Q98SON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(Q98SON,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(d)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty="n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.88e6,6.88e6,6.78e6,6.78e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(Q98SON),2),round(maxValue(Q98SON),2)),title =
@@ -310,9 +357,17 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
+##dev.off()
+##embed_fonts("Figuras/Q98SON.pdf",outfile = "Figuras/Q98SON.pdf")
+
+plot(1,axes = F,ann = F,type = "n")
+legend("topleft",
+       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1)
+
 dev.off()
-embed_fonts("Figuras/Q98SON.pdf",outfile = "Figuras/Q98SON.pdf")
- 
+embed_fonts("Figuras/Q98ALL.pdf",outfile = "Figuras/Q98ALL.pdf")
+
 pdf("Figuras/MuANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
 
@@ -337,16 +392,22 @@ text(7.5e5, 6.72e6, "200 km", cex= 1)
 dev.off()
 embed_fonts("Figuras/MuANO.pdf",outfile = "Figuras/MuANO.pdf")
 
-pdf("Figuras/MuDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+pdf("Figuras/MuALL.pdf",onefile = T, width=21/2.54, height=29/2.54,paper = "special",family
     = "CM Roman")
+
+par(mfrow = c(3,2),mar = c(2,2.5,2.5,1.5),mgp = c(1,1,0))
+
+
+##pdf("Figuras/MuDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(MuDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuDJF,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(a)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(MuDJF),2),round(maxValue(MuDJF),2)),title =
@@ -358,19 +419,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/MuDJF.pdf",outfile = "Figuras/MuDJF.pdf")
-
-pdf("Figuras/MuMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/MuDJF.pdf",outfile = "Figuras/MuDJF.pdf")
+## 
+##pdf("Figuras/MuMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(MuMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuMAM,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(b)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(MuMAM),2),round(maxValue(MuMAM),2)),title =
@@ -382,19 +443,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/MuMAM.pdf",outfile = "Figuras/MuMAM.pdf")
-
-pdf("Figuras/MuJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/MuMAM.pdf",outfile = "Figuras/MuMAM.pdf")
+## 
+##pdf("Figuras/MuJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(MuJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuJJA,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(c)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(MuJJA),2),round(maxValue(MuJJA),2)),title =
@@ -406,19 +467,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/MuJJA.pdf",outfile = "Figuras/MuJJA.pdf")
-
-pdf("Figuras/MuSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/MuJJA.pdf",outfile = "Figuras/MuJJA.pdf")
+## 
+##pdf("Figuras/MuSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(MuSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(MuSON,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(d)",adj=0,line = 0.5, cex=1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(MuSON),2),round(maxValue(MuSON),2)),title =
@@ -430,8 +491,17 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
+##dev.off()
+##embed_fonts("Figuras/MuSON.pdf",outfile = "Figuras/MuSON.pdf")
+
+plot(1,axes = F,ann = F,type = "n")
+legend("topleft",
+       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1)
+
 dev.off()
-embed_fonts("Figuras/MuSON.pdf",outfile = "Figuras/MuSON.pdf")
+embed_fonts("Figuras/MuALL.pdf",outfile = "Figuras/MuALL.pdf")
+
 
 
 pdf("Figuras/SigmaANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
@@ -458,16 +528,22 @@ text(7.5e5, 6.72e6, "200 km", cex= 1)
 dev.off()
 embed_fonts("Figuras/SigmaANO.pdf",outfile = "Figuras/SigmaANO.pdf")
 
-pdf("Figuras/SigmaDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+pdf("Figuras/SigmaALL.pdf",onefile = T, width=21/2.54, height=29/2.54,paper = "special",family
     = "CM Roman")
+
+par(mfrow = c(3,2),mar = c(2,2.5,2.5,1.5),mgp = c(1,1,0))
+
+
+##pdf("Figuras/SigmaDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(SigmaDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaDJF,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(a)",line = 0.5, adj=0,cex = 1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(SigmaDJF),2),round(maxValue(SigmaDJF),2)),title =
@@ -479,19 +555,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/SigmaDJF.pdf",outfile = "Figuras/SigmaDJF.pdf")
-
-pdf("Figuras/SigmaMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/SigmaDJF.pdf",outfile = "Figuras/SigmaDJF.pdf")
+## 
+##pdf("Figuras/SigmaMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(SigmaMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaMAM,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(b)",line = 0.5, adj=0,cex = 1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(SigmaMAM),2),round(maxValue(SigmaMAM),2)),title =
@@ -503,19 +579,19 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/SigmaMAM.pdf",outfile = "Figuras/SigmaMAM.pdf")
-
-pdf("Figuras/SigmaJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/SigmaMAM.pdf",outfile = "Figuras/SigmaMAM.pdf")
+## 
+##pdf("Figuras/SigmaJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(SigmaJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaJJA,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(c)",line = 0.5, adj=0,cex = 1.5)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(SigmaJJA),2),round(maxValue(SigmaJJA),2)),title =
@@ -527,19 +603,16 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/SigmaJJA.pdf",outfile = "Figuras/SigmaJJA.pdf")
+##dev.off()
+##embed_fonts("Figuras/SigmaJJA.pdf",outfile = "Figuras/SigmaJJA.pdf")
 
-pdf("Figuras/SigmaSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##pdf("Figuras/SigmaSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(SigmaSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(SigmaSON,add = T)
 plot(limite,add=T,cex=2)
-
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8)
+mtext("(d)",line = 0.5, adj=0,cex = 1.5)
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(SigmaSON),2),round(maxValue(SigmaSON),2)),title =
@@ -551,11 +624,20 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
+##dev.off()
+##embed_fonts("Figuras/SigmaSON.pdf",outfile = "Figuras/SigmaSON.pdf")
+
+plot(1,axes = F,ann = F,type = "n")
+legend("topleft",
+       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1)
+
 dev.off()
-embed_fonts("Figuras/SigmaSON.pdf",outfile = "Figuras/SigmaSON.pdf")
+embed_fonts("Figuras/SigmaALL.pdf",outfile = "Figuras/SigmaALL.pdf")
+plot(1)
 
-
-pdf("Figuras/PluviANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+#tikz("Figuras/PluviANO.tex",width=18/2.54, height=18/2.54)
+pdf("Figuras/PluviANO_ing.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
 
 image(PluviANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
@@ -563,12 +645,17 @@ contour(PluviANO,add = T)
 plot(limite,add=T,cex=2)
 
 legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8 ,bty="n")
+       legend=c("Santa Catarina state","Coordinate reference system - UTM ","Datum: SAD/69 Zone 22S"),
+    title="Legend", bg="white", lty=c(1,NA,NA), 
+    col=c(1,NA,NA), cex = 0.8,border = "white",bty = "n")
+
+## legend("bottomleft",
+##        legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##     title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8 ,bty="n")
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviANO),2),round(maxValue(PluviANO),2)),title =
-    "Precipitação Anual (mm)",cex=1)
+    "Annual precipitation (mm)",cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -577,23 +664,28 @@ text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
 dev.off()
-embed_fonts("Figuras/PluviANO.pdf",outfile = "Figuras/PluviANO.pdf")
+embed_fonts("Figuras/PluviANO_ing.pdf",outfile = "Figuras/PluviANO_ing.pdf")
 
-
-pdf("Figuras/PluviDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+pdf("Figuras/PluviALL_ing.pdf",onefile = T, width=16/2.54, height=21/2.54,paper = "special",family
     = "CM Roman")
+
+par(mfrow = c(3,2),mar = c(2,2.5,2.5,1),mgp = c(1,1,0))
+
+
+##pdf("Figuras/PluviDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(PluviDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviDJF,add = T)
 plot(limite,add=T,cex=2)
+mtext("(a)",line = 0.5,adj=0,cex=1)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
-
-pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
+pnts <- cbind(x=c(2.0e5,2.2e5,2.2e5,2.0e5),y=c(6.85e6,6.85e6,6.75e6,6.75e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviDJF),2),round(maxValue(PluviDJF),2)),title =
-    "Precipitação Verão (mm)",cex=1)
+    "Summer precipitation (mm)",cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -601,23 +693,23 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/PluviDJF.pdf",outfile = "Figuras/PluviDJF.pdf")
-
-pdf("Figuras/PluviMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/PluviDJF.pdf",outfile = "Figuras/PluviDJF.pdf")
+## 
+##pdf("Figuras/PluviMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(PluviMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviMAM,add = T)
 plot(limite,add=T,cex=2)
+mtext("(b)",line = 0.5,adj=0,cex=1)
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
-
-pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
+pnts <- cbind(x=c(2.0e5,2.2e5,2.2e5,2.0e5),y=c(6.85e6,6.85e6,6.75e6,6.75e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviMAM),2),round(maxValue(PluviMAM),2)),title =
-    "Precipitação Outono (mm)",cex=1)
+    "Autumn precipitation (mm)",cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -625,23 +717,24 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/PluviMAM.pdf",outfile = "Figuras/PluviMAM.pdf")
-
-pdf("Figuras/PluviJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/PluviMAM.pdf",outfile = "Figuras/PluviMAM.pdf")
+## 
+##pdf("Figuras/PluviJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(PluviJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviJJA,add = T)
 plot(limite,add=T,cex=2)
+mtext("(c)",line = 0.5,adj=0,cex=1)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8, bty="n")
 
-pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
+pnts <- cbind(x=c(2.0e5,2.2e5,2.2e5,2.0e5),y=c(6.85e6,6.85e6,6.75e6,6.75e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviJJA),2),round(maxValue(PluviJJA),2)),title =
-    "Precipitação Inverno (mm)",cex=1)
+    "Winter precipitation (mm)",cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -649,23 +742,24 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/PluviJJA.pdf",outfile = "Figuras/PluviJJA.pdf")
+##dev.off()
+##embed_fonts("Figuras/PluviJJA.pdf",outfile = "Figuras/PluviJJA.pdf")
 
-pdf("Figuras/PluviSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##pdf("Figuras/PluviSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(PluviSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(PluviSON,add = T)
 plot(limite,add=T,cex=2)
+mtext("(d)",line = 0.5,adj=0,cex=1)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
 
-pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
+pnts <- cbind(x=c(2.0e5,2.2e5,2.2e5,2.0e5),y=c(6.85e6,6.85e6,6.75e6,6.75e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(PluviSON),2),round(maxValue(PluviSON),2)),title =
-    "Precipitação Primavera (mm)",cex=1)
+    "Spring precipitation (mm)",cex=1)
 
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("white", "black"), plot.grid= F)
@@ -673,8 +767,23 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
+##dev.off()
+##embed_fonts("Figuras/PluviSON.pdf",outfile = "Figuras/PluviSON.pdf")
+
+plot(1,axes = F,ann = F,type = "n")
+
+legend("topleft",
+       legend=c("Santa Catarina state","Coordinate reference system - UTM ","Datum: SAD/69 Zone 22S"),
+    title="Legend", bg="white", lty=c(1,NA,NA), 
+    col=c(1,NA,NA),bty = "n", cex = 1)
+
+## legend("topleft",
+##        legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##     title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1)
+
 dev.off()
-embed_fonts("Figuras/PluviSON.pdf",outfile = "Figuras/PluviSON.pdf")
+embed_fonts("Figuras/PluviALL_ing.pdf",outfile = "Figuras/PluviALL_ing.pdf")
+
 
 pdf("Figuras/IEBANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
@@ -700,16 +809,24 @@ text(7.5e5, 6.72e6, "200 km", cex= 1)
 dev.off()
 embed_fonts("Figuras/IEBANO.pdf",outfile = "Figuras/IEBANO.pdf")
 
-pdf("Figuras/IEBDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+
+pdf("Figuras/IEBALL.pdf",onefile = T, width=21/2.54, height=29/2.54,paper = "special",family
     = "CM Roman")
+
+par(mfrow = c(3,2),mar = c(2,2.5,2.5,1.5),mgp = c(1,1,0))
+
+
+##pdf("Figuras/IEBDJF.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(IEBDJF,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IEBDJF,add = T)
 plot(limite,add=T,cex=2)
+mtext("(a)",line = 0.5,adj=0,cex=1.5)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(IEBDJF),2),round(maxValue(IEBDJF),2)),title =
@@ -721,20 +838,21 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/IEBDJF.pdf",outfile = "Figuras/IEBDJF.pdf")
-
-
-pdf("Figuras/IEBMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/IEBDJF.pdf",outfile = "Figuras/IEBDJF.pdf")
+## 
+## 
+##pdf("Figuras/IEBMAM.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(IEBMAM,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IEBMAM,add = T)
 plot(limite,add=T,cex=2)
+mtext("(b)",line = 0.5,adj=0,cex=1.5)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(IEBMAM),2),round(maxValue(IEBMAM),2)),title =
@@ -746,20 +864,21 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/IEBMAM.pdf",outfile = "Figuras/IEBMAM.pdf")
-
-
-pdf("Figuras/IEBJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/IEBMAM.pdf",outfile = "Figuras/IEBMAM.pdf")
+## 
+## 
+##pdf("Figuras/IEBJJA.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(IEBJJA,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IEBJJA,add = T)
 plot(limite,add=T,cex=2)
+mtext("(c)",line = 0.5,adj=0,cex=1.5)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(IEBJJA),2),round(maxValue(IEBJJA),2)),title =
@@ -771,20 +890,21 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/IEBJJA.pdf",outfile = "Figuras/IEBJJA.pdf")
-
-
-pdf("Figuras/IEBSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
+##dev.off()
+##embed_fonts("Figuras/IEBJJA.pdf",outfile = "Figuras/IEBJJA.pdf")
+## 
+## 
+##pdf("Figuras/IEBSON.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+##    = "CM Roman")
 
 image(IEBSON,col=color_hidro,asp = 1,xlab = "",ylab = "")
 contour(IEBSON,add = T)
 plot(limite,add=T,cex=2)
+mtext("(d)",line = 0.5,adj=0,cex=1.5)
 
-legend("bottomleft",
-       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
+##legend("bottomleft",
+##       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+##    title="Legenda", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 0.8,bty="n")
 
 pnts <- cbind(x=c(2.3e5,2.5e5,2.5e5,2.3e5),y=c(6.9e6,6.9e6,6.8e6,6.8e6))
 legend.gradient(pnts,cols=color_hidro,limits = c(round(minValue(IEBSON),2),round(maxValue(IEBSON),2)),title =
@@ -796,9 +916,16 @@ SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, f
 text(5.5e5, 6.72e6, "0", cex= 1)
 text(7.5e5, 6.72e6, "200 km", cex= 1)
 
-dev.off()
-embed_fonts("Figuras/IEBSON.pdf",outfile = "Figuras/IEBSON.pdf")
+##dev.off()
+##embed_fonts("Figuras/IEBSON.pdf",outfile = "Figuras/IEBSON.pdf")
 
+plot(1,axes = F,ann = F,type = "n")
+legend("topleft",
+       legend=c("Estado de Santa Catarina","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+    title="Legenda", bty = "n", lty=c(1,NA,NA), col=c(1,NA,NA),cex = 1)
+
+dev.off()
+embed_fonts("Figuras/IEBALL.pdf",outfile = "Figuras/IEBALL.pdf")
 
 pdf("Figuras/IESANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")
@@ -889,6 +1016,7 @@ plot(Hidro,col="lightblue",axes = T,asp=1)
 plot(limite,add=T,cex=2)
 points(PluviEST,col=1,pch=19)
 
+
 SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
 SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("transparent", "black"), plot.grid= F)
 
@@ -929,16 +1057,4 @@ legend(2e5,6.8e6, legend=c("Estado de Santa Catarina","Hidrografia",
 
 dev.off()
 embed_fonts("Figuras/Estat-Fluvi.pdf",outfile = "Figuras/Estat-Fluvi.pdf")
-
-
-
-
-
-
-
-
-
-
-
-
 

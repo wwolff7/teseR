@@ -1,0 +1,39 @@
+
+pdf("Figuras/BoxCox_SigmaANO.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
+par(mfrow = c(1,2))
+hist(Sigma.ANO.geo$data,main="", xlab="",ylab = "Frequência")
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.ANO.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
+dev.off()
+embed_fonts("Figuras/BoxCox_SigmaANO.pdf",outfile="Figuras/BoxCox_SigmaANO.pdf")
+
+
+
+pdf("Figuras/Vario-Sigma_ANO.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+
+
+dev.off()
+embed_fonts("Figuras/Vario-Sigma_ANO.pdf",outfile = "Figuras/Vario-Sigma_ANO.pdf")
+
+
+
+
+pdf("Figuras/xv_Sigma-ANO.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+par(mfrow = c(1,2))
+plot(xv.Sigma.ANO$predicted,xv.Sigma.ANO$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1.5,adj=0,line=1)
+
+hist(xv.Sigma.ANO$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xv_Sigma-ANO.pdf",outfile = "Figuras/xv_Sigma-ANO.pdf")
+

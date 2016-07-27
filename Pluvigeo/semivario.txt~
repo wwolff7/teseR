@@ -1,0 +1,18 @@
+pdf("Figuras/semivarioPaALL.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family="CM Roman")
+mtext("(a)",side = 3,cex=1.5,adj=0,line = 0.5)
+plot(v.pluviDJF,xlab="Distância (km)",ylab=expression(gamma(u))) #, ylim = c(0,4e-6),mgp=c(2.5,1,0))
+lines(lowess(v.pluviDJF$u,v.pluviDJF$v))
+
+mtext("(b)",side = 3,cex=1.5,adj=0,line = 0.5)
+plot(v.pluviMAM,xlab="Distância (km)",ylab=expression(gamma(u)))#, ylim = c(0,4e-6),mgp=c(2.5,1,0))
+lines(lowess(v.pluviMAM$u,v.pluviMAM$v))
+
+mtext("(c)",side = 3,cex=1.5,adj=0,line = 0.5)
+plot(v.pluviJJA,xlab="Distância (km)",ylab=expression(gamma(u)))#, ylim = c(0,4e-6),mgp=c(2.5,1,0))
+lines(lowess(v.pluviJJA$u,v.pluviJJA$v))
+
+dev.off()
+
+
+embed_fonts("Figuras/semivarioPaALL.pdf",outfile = "Figuras/semivarioPaALL.pdf")

@@ -44,13 +44,35 @@ PeixeMAM <- as.data.frame(extractzoo(Peixe,trgt="MAM"))
 PeixeJJA <- as.data.frame(extractzoo(Peixe,trgt="JJA"))
 PeixeSON <- as.data.frame(extractzoo(Peixe,trgt="SON"))
 
-head(Peixe)
+plot(Peixe[,1])
+x <- ts(Peixe[,1],start=c(1985,1),frequency=365.25)
+m <- decompose(x)
+str(m)
+m$figure
+plot(m)
+
+library(forecast)
+fit <- ets(x)
+fc <- forecast(fit)
+plot(fc)
+
+y <- msts(x, seasonal.periods=c(7,365.25))
+fit <- tbats(y)
+fc <- forecast(fit)
+plot(fc)
+accuracy(fc)
+
+
 summary(Peixe)
 x_peixe <- c(1:nrow(Peixe))
 x_peixeDJF <- c(1:nrow(PeixeDJF)) 
 x_peixeMAM <- c(1:nrow(PeixeMAM)) 
 x_peixeJJA <- c(1:nrow(PeixeJJA)) 
 x_peixeSON <- c(1:nrow(PeixeSON)) 
+
+## Q98 Rio do Peixe
+Q98 <- peixe
+
 
 ## Vazão de base
 Qb.Peixe <- lapply(as.data.frame(Peixe),FUN = function(x) BaseflowSeparation(x)[,1])
@@ -665,7 +687,7 @@ Qb.AraranguaJJA <- lapply(AraranguaJJA,FUN = function(x) BaseflowSeparation(x)[,
 Qb.AraranguaSON <- lapply(AraranguaSON,FUN = function(x) BaseflowSeparation(x)[,1])
 
 ## Hidrografa
-hydrograph(streamflow = as.data.frame(AraranguaMAM)[,1],streamflow2=Qb.AraranguaMAM$E72870000,timeSeries = data.ararangua)
+hydrograph(streamflow = as.data.frame(AraranguaMAM)[,1],streamflow2=Qb.AraranguaMAM$E84949000,timeSeries = data.ararangua)
 
 ## Splines
 Q_ararangua_sp <- lapply(Ararangua,FUN = function(x) splinefun(x_ararangua,x))
@@ -1892,7 +1914,6 @@ names(Qesp_mampituba) <- "E84970000"
 summary(Qesp_mampituba)
 length(Mampituba)
 
-
 (Param_itajai <- Qparam(Qesp_itajai))
 (Param_peixe <- Qparam(Qesp_peixe))
 (Param_canoas <- Qparam(Qesp_canoas))
@@ -2562,7 +2583,7 @@ sort(gofstat(fitE2)$aic)
 sort(gofstat(fitE1)$aic)
 sort(gofstat(fitE3)$aic)
 sort(gofstat(fitE4)$aic)
-
+legend
 dbisa(
 plot(fitE1$no)
 plot(fitE1$ln,aps=1)

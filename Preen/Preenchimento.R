@@ -7,7 +7,7 @@ library(hydroPSO)
 
 
 ##rm(list = ls())
-citation("hydroTSM")
+citation("mtsdi")
 options(OutDec=",",digits = 7)
 
 # 2.0 ABRIR ARQUIVO/BANCO DE DADOS
@@ -293,19 +293,21 @@ areas.itajai[7:10]
 fun.imput <- splinefun(Qesp_itajai1[,2],Qesp_itajai1[,1])
 
 
-f <- ~Qesp_itajai1[,1]+Qesp_itajai1[,2]+Qesp_itajai1[,3]+Qesp_itajai1[,4]
-
 ##----------------------------------------------------------------------------- 
-obs0 <- Qesp_itajai1[c(300:(300+(3*365))),1]
-sim0 <- fun.imput(Qesp_itajai1[c(300:(300+(3*365))),2])
-sim0 <- fun.imput1(Qesp_itajai1[c(300:(300+(3*365))),2])
 
-Qesp_itajai1[c(300:(300+(3*365))),1] = NA
-Qesp_itajai1[c(300:(300+(3*365))),1]
+notNA   <- which(!is.na(Qesp_itajai1), arr.ind=T)
+set.seed(333); sel.pos <- notNA[sample(nrow(notNA), 300),]
+obs0 <- as.data.frame(Qesp_itajai1[sel.pos[,1],sel.pos[,2]])
+head(sel.pos[,1])
 
-i0 <- mnimput(f,Qesp_itajai1,eps=1e-3,ts=F,log=T, method="spline",sp.control=list(df=c(7,7)))
+Qesp_itajai2 <- Qesp_itajai1
+Qesp_itajai2[sel.pos[,1],sel.pos[,2]] <- NA
 
-(sim0 <- data.frame(predict(i0))[c(300:(300+(3*365))),1])
+f <- ~Qesp_itajai2[,1]+Qesp_itajai2[,2]+Qesp_itajai2[,3]+Qesp_itajai2[,4]
+
+i0 <- mnimput(f,Qesp_itajai2,eps=1e-3,ts=F,log=T, method="spline",sp.control=list(df=c(7,7,7,7)))
+
+(sim0 <- data.frame(predict(i0))[sel.pos[,1],sel.pos[,2]])
 
 ggof(sim0,obs0)
 hydroPSO()
@@ -495,7 +497,7 @@ plot(Qesp_peixe,ylab=expression(Q~(m^3.~s^{-1})),xlab="Tempo",main="")
 
 ## Preenchimento de falhas
 f <- ~Qesp_peixe1+Qesp_peixe2+Qesp_peixe3+Qesp_peixe4+Qesp_peixe5+Qesp_peixe6+Qesp_peixe7
-i <- mnimput(f,Qesp_peixe,eps=1e-3,ts=F,log=T, method="spline",sp.control=list(df=c(7,7,7,7,7,7,7)))
+i <- mnimput(f,Qesp_peixe,eps=1e-3,ts=T,log=T, method="spline",sp.control=list(df=c(7,7,7,7,7,7,7)))
 ## plot(i)
 p <- ifelse(predict(i)<0,predict(i)*-1,predict(i))
 
@@ -516,6 +518,8 @@ Peixe[,6]<-Qimp_peixe[,6]*areas.peixe[6]
 Peixe[,7]<-Qimp_peixe[,7]*areas.peixe[7]
 
 plot(Peixe)
+
+matrixplot(dwi(Qimp_peixe, var.type="Days"),ColorRamp="Days")
 
 ##-----------------------------------------------------------------------------##
 

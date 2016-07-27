@@ -1,0 +1,31 @@
+pdf("Figuras/xvpluviALL.pdf",onefile = T, width=16/2.54, height=16/2.54,paper =
+        "special",family="CM Roman")
+
+par(mfrow = c(4,2),mar = c(2.5,2.5,2.5,0.5),mgp = c(1.5,0.5,0))
+
+plot(xv.pluviDJF$predicted,xv.pluviDJF$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1,adj=0,line=1)
+hist(xv.pluviDJF$std.error,breaks = 20,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1,adj=0,line=1)
+
+plot(xv.pluviMAM$predicted,xv.pluviMAM$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(c)",cex=1,adj=0,line=1)
+hist(xv.pluviMAM$std.error,breaks = 20,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(d)",cex=1,adj=0,line=1)
+
+plot(xv.pluviJJA$predicted,xv.pluviJJA$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(e)",cex=1,adj=0,line=1)
+hist(xv.pluviJJA$std.error,breaks = 20,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(f)",cex=1,adj=0,line=1)
+
+plot(xv.pluviSON$predicted,xv.pluviSON$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(g)",cex=1.5,adj=0,line=1)
+hist(xv.pluviSON$std.error,breaks = 20,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(h)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xvpluviALL.pdf",outfile = "Figuras/xvpluviALL.pdf")

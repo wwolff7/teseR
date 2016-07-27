@@ -1,73 +1,30 @@
-
 ## Configuração Inicial
 
 require(RColorBrewer) # Para Paletas de cores
-require(hydroTSM) 
 colour<-colorRampPalette(c("white","blue","dark Blue"))
 require(MASS)
-require(rgdal)
-require(maptools)
 require(geoR)
-require(xtable)
+require(hydroGOF)
+library(rgdal)
+require(extrafont)
+fonts()
+loadfonts()
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 5080a23dbc1bfc104475844919d3270c46243e1a
 getwd()
 setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/Paramgeo")
 ## rm(list = ls()) ## Para remover todos os objetos
-cite("geoR")
-citation("geoR")
+
+citation("MASS")
 
 ##Ver documentação
 cov.spatial()
 trend.spatial()
 options(OutDec=",",digits=10)
 ##-----------------------------------------------------------------------------##
-## Funções para colocar Norte e legenda nos mapas
-
-northarrow <- function(loc,size,bearing=0,cols,cex=1,...) {
-# checking arguments
-if(missing(loc)) stop("loc is missing")
-if(missing(size)) stop("size is missing")
-# default colors are white and black
-if(missing(cols)) cols <- rep(c("white","black"),8)
-# calculating coordinates of polygons
-radii <- rep(size/c(1,4,2,4),4)
-x <- radii[(0:15)+1]*cos((0:15)*pi/8+bearing)+loc[1]
-y <- radii[(0:15)+1]*sin((0:15)*pi/8+bearing)+loc[2]
-# drawing polygons
-for (i in 1:15) {
-x1 <- c(x[i],x[i+1],loc[1])
-y1 <- c(y[i],y[i+1],loc[2])
-polygon(x1,y1,col=cols[i])
-}
-# drawing the last polygon
-polygon(c(x[16],x[1],loc[1]),c(y[16],y[1],loc[2]),col=cols[16])
-# drawing letters
-b <- c("E","N","W","S")
-for (i in 0:3) text((size+par("cxy")[1])*cos(bearing+i*pi/2)+loc[1],
-(size+par("cxy")[2])*sin(bearing+i*pi/2)+loc[2],b[i+1],
-cex=cex)
-}
-
-
-scalebar <- function(loc,length,unit="km",division.cex=.8,...) {
-if(missing(loc)) stop("loc is missing")
-if(missing(length)) stop("length is missing")
-x <- c(0,length/c(4,2,4/3,1),length*1.1)+loc[1]
-y <- c(0,length/(10*3:1))+loc[2]
-cols <- rep(c("black","white"),2)
-for (i in 1:4) rect(x[i],y[1],x[i+1],y[2],col=cols[i])
-for (i in 1:5) segments(x[i],y[2],x[i],y[3])
-labels <- x[c(1,3)]-loc[1]
-labels <- append(labels,paste(x[5]-loc[1],unit))
-text(x[c(1,3,5)],y[4],labels=labels,adj=.5,cex=division.cex)
-}
-
 ##-----------------------------------------------------------------------------##
 
+## Anual
 ## Importando dados
 #[-22,]
 dir()
@@ -79,7 +36,7 @@ flori <- read.csv("Limite-Floripa.csv",h=T,sep=",",dec = ".")[,-3];flori$Longitu
 
 summary(limite)
 ##write.table(dados,"Resultados.txt")
-
+dados$sigma_ANO
 head(dados)
 dim(dados)
 ## lendo dados tipo shapefile
@@ -105,7 +62,7 @@ dados
 
 postscript("Figuras/Estacoes.eps",onefile = T,horizontal = F, width=18/2.54, height=18/2.54,paper="special")
 plot(limite$Longitude,limite$Latitude,type="l",asp=1,xlim = c(min(dados$Longitude),max(dados$Longitude)),ylim = c(min(dados$Latitude),max(dados$Latitude)),ylab = "Latitude (km)",xlab = "Longitude (km)")
-lines(flori)
+
 points(dados$Longitude,dados$Latitude,pch=19,col=1)
 
 
@@ -133,19 +90,15 @@ Qp.int <- function(mu,sigma,area,p){
 }
 
 
-summary(dados[,c(7,8)])
+summary(dados[,c(3,4)])
 mu.param <- seq(-4.50,-3.10,l=20)
-sigma.param <- seq(0.60,1.20,l=20)
-
-
+sigma.param <- seq(0.60,1.90,l=20)
 
 
 for (i in 1:length(mu.param)){
 
-x <- 5
-
 plot(p*100,exp(mu.param[i]+(mean(sigma.param)*qnorm(1-p))),type="l",xlab = "Permanência (%)",ylab = expression(Q[p]~~(m^3%.%s^{-1})),mgp=c(2.5,1,0)) 
-mtext(bquote(.(x)~Variando~mu~para~sigma~fixo))##~~~Q[m]==.(round(Qm.est[i]),4)),cex=2)
+mtext(bquote(Variando~mu~para~sigma~fixo))##~~~Q[m]==.(round(Qm.est[i]),4)),cex=2)
 
 Sys.sleep(0.9)
 }
@@ -154,7 +107,7 @@ Sys.sleep(0.9)
 Qm.est <- c()
 for (i in 1:length(sigma.param)){
 
-Qm.est[i] <- integrate(Qp.int, lower=0, upper=1, mu=mean(mu.param), sigma=sigma.param[i],area=1)
+Qm.est[i] <- integrate(Qp.int, lower=0, upper=1, mu=mean(mu.param), sigma=sigma.param[i],area=1)$value
 plot(p*100,exp(mean(mu.param)+(sigma.param[i]*qnorm(1-p))),type="l",xlab = "Permanência (%)",ylab = expression(Q[p]~~(m^3%.%s^{-1})),mgp=c(2.5,1,0)) 
 mtext(bquote(Variando~sigma~para~mu~fixo),cex=2)
 abline(h=Qm.est[i],col="red",lwd=2)
@@ -191,26 +144,48 @@ Sys.sleep(0.9)
 ## Sys.sleep(0.9)
 ## }
 
+
 postscript("Vr9.eps",onefile = T,horizontal = F, width=18/2.54, height=18/2.54)
 
-plot(p*100,Qp1,type="l",xlab = "Permanência (%)",ylab = expression(Q[p]~~(m^3%.%s^{-1})),mgp=c(2.5,1,0))
-lines(p*100,Qm,col=2,lty=2,lwd = 2)
+p <- seq(0,0.99,l=1000)
+Qm <- rep(1.5,times = length(p))
 
-pqf <-1-pnorm((log(Qm[1]/dados$Área_Bacia[4])-dados$Param_ANO.mu[4])/dados$Param_ANO.sigma[4])
+for (i in 1:length(sigma.param)) {
+
+Qm.est[i] <- integrate(Qp.int, lower=0, upper=1, mu=mean(mu.param), sigma=sigma.param[i],area=1)$value
+plot(p*100,exp(mean(mu.param)+(sigma.param[i]*qnorm(1-p))),type="l",xlab = "Permanência (%)",ylab = expression(Q[p]~~(m^3%.%s^{-1})),mgp=c(2.5,1,0),ylim = c(0,1)) 
+mtext(bquote(Variando~sigma~para~mu~fixo),cex=2)
+abline(h=Qm.est[i],col="red",lwd=2)
+
+pqf <- c()
+pqf[i] <-1-pnorm((log(Qm.est[i])-mean(mu.param))/sigma.param[i])
 
 T <- 5
-pqfseq <- seq(pqf*100,(1-(1/T))*100,l=1000)
 
-Qpseq <- (exp(dados$Param_ANO.mu[4]+(dados$Param_ANO.sigma[4]*qnorm(1-(pqfseq/100)))))*dados$Área_Bacia[4]
+pqfseq <- list()
+pqfseq[[i]] <- seq(pqf[i]*100,(1-(1/T))*100,l=1000)
 
-coords.x <- c(pqf*100,pqfseq,(1-(1/T))*100)
-coords.y <- c(Qm[1],Qpseq,Qm[1])
+Qpseq <- list()
+Qpseq[[i]] <- (exp(mean(mu.param)+(sigma.param[i]*qnorm(1-(pqfseq[[i]]/100)))))*1
 
-polygon(coords.x,coords.y,col=1)
-text(0,Qm[1]*1.20,expression(Q[f]),cex=1.5)
-text(mean(pqfseq),Qm[1]*1.20,bquote(V[r]~para~T==.(T)~anos),cex = 1.5)
-text(98,mean(seq(0,Qm[1])),"T",cex = 1.5)
-arrows(97,mean(seq(0,Qm[1])),max(pqfseq),mean(seq(0,Qm[1])),lwd = 2)
+Vr <- c()
+Vr[i] <- (((((1-(1/T))-pqf[i])*Qm.est[i])-integrate(Qp.int, lower=pqf[i], upper=(1-(1/T)), mu=mu.param, sigma=sigma.param[i],area=1)$value)*(60*60*24*365))/10^6
+    
+coords.x <- list()
+coords.x[[i]] <- c(pqf[i]*100,pqfseq[[i]],(1-(1/T))*100)
+
+coords.y <- list()
+coords.y[[i]] <- c(Qm.est[i],Qpseq[[i]],Qm.est[i])
+
+polygon(coords.x[[i]],coords.y[[i]],col=1)
+#text(0,Qm[1]*1.20,expression(Q[f]),cex=1.5)
+text(50,1,bquote(V[r] ==.(round(Vr[i],2))%.%10^{6}),cex = 1)
+##text(98,mean(seq(0,Qm[1])),"T",cex = 1.5)
+##arrows(97,mean(seq(0,Qm[1])),max(pqfseq[[i]]),mean(seq(0,Qm[1])),lwd = 2)
+
+Sys.sleep(0.9)
+}
+
 
 dev.off()
 
@@ -293,8 +268,9 @@ colnames(Qp) <- dados$Código
 return(Qp)
 }
 summary(dados[c(7,8)])
+names(dados)
 
-Qp_ANO <- Qp(dados[,c(7,8)],dados$Área_Bacia)
+Qp_ANO <- Qp(dados[,c(3,4)],dados$Area)
 Qp_DJF <- Qp(dados[,c(9,10)],dados$Área_Bacia)
 Qp_MAM <- Qp(dados[,c(11,12)],dados$Área_Bacia)
 Qp_JJA <- Qp(dados[,c(13,14)],dados$Área_Bacia)
@@ -327,7 +303,7 @@ setwd("frames0")
 
 postscript("curv_mapa%03d.eps",onefile = F,horizontal = T, width=30/2.54, height=20/2.54,)
 
-plot.perm(dados[,c(7,8)],Qp_ANO)
+plot.perm(dados[,c(3,4)],Qp_ANO)
 
 dev.off()
 
@@ -371,7 +347,7 @@ for(i in 1:ncol(Qp_DJF)){
 dev.off()
 
 setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/Paramgeo")
-## converte os pngs para um gif usando ImageMagick
+## converte os pngs para um gif usando Imageagick
 ## system("convert -delay 10 curv_perm*.png curv_perm.gif")
  
 ## remove os arquivos png
@@ -412,7 +388,7 @@ dim(dados)
 Mu.ANO.geo<-as.geodata(dados,coords.col = 1:2, data.col = 3,borders=T)
 Mu.ANO.geo$borders<-limite
 
-
+boxplot(Mu.ANO.geo$data)
 
 plot(Mu.ANO.geo,low=T)
 summary(limite)
@@ -431,11 +407,20 @@ boxcox(ANO.mu~1,lambda=seq(0,1,l=20))
 ##ANO.mu.inv<-(((lambda.mu.ANO*Mu.ANO.geo$data)+1)^(1/lambda.mu.ANO))-5;ANO.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_muANO.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_MuANO.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Mu.ANO.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(ANO.mu~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(ANO.mu~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_MuANO.pdf",outfile="Figuras/BoxCox_MuANO.pdf")
+
+
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -517,11 +502,15 @@ Mu.ANOfim$lf6 <- likfit(Mu.ANO.geo, cov.model="gau", trend =~trend_Mu.ANO[,9]+po
 sort(sapply(Mu.ANOfim, AIC))
 plot(Mu.ANO.geo,low=T,trend=~poly(trend_Mu.ANO[,19],2)+poly(trend_Mu.ANO[,3],2))
 
-postscript("Figuras/Vario-mu_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-Mu_ANO.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.mu.ANO<-variog(Mu.ANO.geo,max.dist=180,uvec=seq(0, 180, by=10),trend =~poly(trend_Mu.ANO[,19],2)+poly(trend_Mu.ANO[,3],2))
 plot(v.mu.ANO,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.mu.ANO$u,v.mu.ANO$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Mu_ANO.pdf",outfile = "Figuras/Vario-Mu_ANO.pdf")
 
 
 ##-----------------------------------------------------------------------------##
@@ -578,8 +567,10 @@ attributes(kc.mu.ANO)
 ##kc.mu.ANO$predict<-(backtransform.moments(lambda=lambda.mu.ANO,mean=kc.mu.ANO$predict,variance=kc.mu.ANO$krige.var)$mean)-5
 kc.mu.ANO$predict
 
-Mu_ANO_krige <- cbind(grid*1000,kc.mu.ANO$predict)
-write.table(Mu_ANO_krige,"MuANO.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.mu.ANO[1:2])), fname = "MuANO.tiff", drivername="GTiff")
+
+##Mu_ANO_krige <- cbind(grid*1000,kc.mu.ANO$predict)
+##write.table(Mu_ANO_krige,"MuANO.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.mu.ANO$predict)
 
@@ -597,8 +588,13 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.mu.ANO<-xvalid(Mu.ANO.geo,model=Mu.ANOfim$lf4)
-names(xv.mu.ANO)
+xv.Mu.ANO<-xvalid(Mu.ANO.geo,model=Mu.ANOlf4$gau)
+names(xv.Mu.ANO)
+
+(RMSEANO <- sqrt(mean((xv.Mu.ANO$predicted-xv.Mu.ANO$data)^2)))
+(pbiasANO <-(sum(xv.Mu.ANO$predicted-xv.Mu.ANO$data)/sum(xv.Mu.ANO$data))*100)
+(rRMSEANO <- (RMSEANO/mean(xv.Mu.ANO$data))*100)
+
 
 plot(xv.mu.ANO$predicted,xv.mu.ANO$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
@@ -607,7 +603,7 @@ abline(lm(xv.mu.ANO$data~xv.mu.ANO$predicted)$coef[1],lm(xv.mu.ANO$data~xv.mu.AN
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.mu.ANO)
+plot(xv.Mu.ANO)
 
 smry(Mu.ANO.geo$data)
 
@@ -629,6 +625,19 @@ dev.off()
 
 ##-----------------------------------------------------------------------------##
 
+pdf("Figuras/xv_Mu-ANO.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+par(mfrow = c(1,2))
+plot(xv.Mu.ANO$predicted,xv.Mu.ANO$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1.5,adj=0,line=1)
+
+hist(xv.Mu.ANO$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xv_Mu-ANO.pdf",outfile = "Figuras/xv_Mu-ANO.pdf")
 
 
 
@@ -744,10 +753,16 @@ image(ex.bayes, val= "simulation", number.col=2,
 ## Análise exploratória geoestatística
 
 names(dados)
+dados$sigma_ANO
+dados
+boxplot(dados$sigma_ANO[which(dados$sigma_ANO < quantile(dados$sigma_ANO,0.99))])
+dados <- dados[which(dados$sigma_ANO < quantile(dados$sigma_ANO,0.99)),]
+quantile(dados$sigma_ANO,0.95)
 
-dim(dados)
 Sigma.ANO.geo<-as.geodata(dados,coords.col = 1:2, data.col = 4,borders=T)
-Sigma.ANO.geo$borders<-limite
+Sigma.ANO.geo$borders <- limite
+boxplot(Sigma.ANO.geo$data)
+Sigma.ANO.geo$data[which(Sigma.ANO.geo$data<quantile(Sigma.ANO.geo$data,0.99))]
 
 plot(Sigma.ANO.geo,low=T)
 summary(limite)
@@ -766,11 +781,16 @@ boxcox(Sigma.ANO.geo$data~1,lambda=seq(0,1,l=20))
 ##ANO.sigma.inv<-(((lambda.sigma.ANO*Sigma.ANO.geo$data)+1)^(1/lambda.sigma.ANO))-5;ANO.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_sigmaANO.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_SigmaANO.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Sigma.ANO.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(Sigma.ANO.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.ANO.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_SigmaANO.pdf",outfile="Figuras/BoxCox_SigmaANO.pdf")
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -853,11 +873,18 @@ Sigma.ANO$lf6 <- likfit(Sigma.ANO.geo, cov.model="gau", trend =~trend_Sigma.ANO[
 sort(sapply(Sigma.ANO, AIC))
 plot(Sigma.ANO.geo,low=T,trend=~poly(trend_Sigma.ANO[,9],2)+poly(trend_Sigma.ANO[,20],2))
 
-postscript("Figuras/Vario-sigma_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+pdf("Figuras/Vario-Sigma_ANO.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.sigma.ANO<-variog(Sigma.ANO.geo,max.dist=180,uvec=seq(0, 180, by=10),trend =~poly(trend_Sigma.ANO[,20],2)+poly(trend_Sigma.ANO[,9],2))
 plot(v.sigma.ANO,xlab="Distância (km)",ylab=expression(gamma(u)))#,ylim = c(5e-3,0.01))
 lines(lowess(v.sigma.ANO$u,v.sigma.ANO$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Sigma_ANO.pdf",outfile = "Figuras/Vario-Sigma_ANO.pdf")
+
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -907,6 +934,7 @@ gr <- locations.inside(grid, limite)
 points(gr, pch=19, cex=0.24,col=4)
 summary(gr)
 
+
 ## Krigagem
 Sigma.ANOlf4$gau
 kc.sigma.ANO <- krige.conv(Sigma.ANO.geo, locations = grid, krige=krige.control(obj=Sigma.ANOlf4$gau))
@@ -914,8 +942,14 @@ attributes(kc.sigma.ANO)
 ##kc.sigma.ANO$predict<-(backtransform.moments(lambda=lambda.sigma.ANO,mean=kc.sigma.ANO$predict,variance=kc.sigma.ANO$krige.var)$mean)-5
 kc.sigma.ANO$predict
 
-Sigma_ANO_krige <- cbind(grid*1000,kc.sigma.ANO$predict)
-write.table(Sigma_ANO_krige,"SigmaANO.ascii",col.names = F,row.names=F,quote=F)
+##SPxDF.s <- SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.ANO[1:2]))
+##SGDF.s1 <- as(SPxDF.s, "SpatialGridDataFrame")
+
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.ANO[1:2])), fname = "SigmaANO.tiff", drivername="GTiff")
+
+
+##Sigma_ANO_krige <- cbind(grid*1000,kc.sigma.ANO$predict)
+##write.table(Sigma_ANO_krige,"SigmaANO.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.sigma.ANO$predict)
@@ -934,8 +968,17 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.sigma.ANO<-xvalid(Sigma.ANO.geo,model=Sigma.ANOlf4$gau)
+xv.Sigma.ANO<-xvalid(Sigma.ANO.geo,model=Sigma.ANOlf4$gau)
 names(xv.sigma.ANO)
+xv.Sigma.ANO$data
+xv.Sigma.ANO$predicted
+
+(RMSEANO <- sqrt(mean((xv.Sigma.ANO$predicted-xv.Sigma.ANO$data)^2)))
+(pbiasANO <-(sum(xv.Sigma.ANO$predicted-xv.Sigma.ANO$data)/sum(xv.Sigma.ANO$data))*100)
+
+(rRMSEANO <- (RMSEANO/mean(xv.Sigma.ANO$data))*100)
+ggof(xv.Sigma.ANO$predicted,xv.Sigma.ANO$data)
+
 
 plot(xv.sigma.ANO$predicted,xv.sigma.ANO$data)
 abline(0,1)
@@ -944,25 +987,27 @@ abline(lm(xv.sigma.ANO$data~xv.sigma.ANO$predicted)$coef[1],lm(xv.sigma.ANO$data
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.sigma.ANO)
+plot(xv.Sigma.ANO)
 
 smry(Sigma.ANO.geo$data)
 
 
-postscript("Figuras/xv_sigma-ANO.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
 
+pdf("Figuras/xv_Sigma-ANO.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.sigma.ANO$predicted,xv.sigma.ANO$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+plot(xv.Sigma.ANO$predicted,xv.Sigma.ANO$std.error,ylim = c(-3,3),xlim = c(min(xv.Sigma.ANO$predicted),1.33), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.sigma.ANO$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Sigma.ANO$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Sigma-ANO.pdf",outfile = "Figuras/xv_Sigma-ANO.pdf")
+
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -1000,11 +1045,18 @@ boxcox(DJF.mu~1,lambda=seq(0,1,l=20))
 ##DJF.mu.inv<-(((lambda.mu.DJF*Mu.DJF.geo$data)+1)^(1/lambda.mu.DJF))-5;DJF.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_muDJF.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_MuDJF.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Mu.DJF.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(DJF.mu~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(DJF.mu~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_MuDJF.pdf",outfile="Figuras/BoxCox_MuDJF.pdf")
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1086,11 +1138,17 @@ Mu.DJF$lf6 <- likfit(Mu.DJF.geo, cov.model="gau", trend =~trend_Mu.DJF[,19]+poly
 sort(sapply(Mu.DJF, AIC))
 plot(Mu.DJF.geo,low=T,trend=~poly(trend_Mu.DJF[,19],2)+poly(trend_Mu.DJF[,3],2))
 
-postscript("Figuras/Vario-mu_DJF.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+pdf("Figuras/Vario-Mu_DJF.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.mu.DJF<-variog(Mu.DJF.geo,max.dist=200,uvec=seq(0, 200, by=10),trend =~poly(trend_Mu.DJF[,19],2)+poly(trend_Mu.DJF[,3],2))
 plot(v.mu.DJF,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.mu.DJF$u,v.mu.DJF$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Mu_DJF.pdf",outfile = "Figuras/Vario-Mu_DJF.pdf")
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -1144,8 +1202,10 @@ attributes(kc.mu.DJF)
 ##kc.mu.DJF$predict<-(backtransform.moments(lambda=lambda.mu.DJF,mean=kc.mu.DJF$predict,variance=kc.mu.DJF$krige.var)$mean)-5
 kc.mu.DJF$predict
 
-Mu_DJF_krige <- cbind(grid*1000,kc.mu.DJF$predict)
-write.table(Mu_DJF_krige,"MuDJF.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.mu.DJF[1:2])), fname = "MuDJF.tiff", drivername="GTiff")
+
+##Mu_DJF_krige <- cbind(grid*1000,kc.mu.DJF$predict)
+##write.table(Mu_DJF_krige,"MuDJF.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.mu.DJF$predict)
@@ -1164,8 +1224,15 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.mu.DJF<-xvalid(Mu.DJF.geo,model=Mu.DJFlf4$gau)
+xv.Mu.DJF<-xvalid(Mu.DJF.geo,model=Mu.DJFlf4$gau)
 names(xv.mu.DJF)
+
+(RMSEDJF <- sqrt(mean((xv.Mu.DJF$predicted-xv.Mu.DJF$data)^2)))
+(pbiasDJF <-(sum(xv.Mu.DJF$predicted-xv.Mu.DJF$data)/sum(xv.Mu.DJF$data))*100)
+
+(rRMSEDJF <- (RMSEDJF/mean(xv.Mu.DJF$data))*100)
+
+
 
 plot(xv.mu.DJF$predicted,xv.mu.DJF$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
@@ -1174,7 +1241,7 @@ abline(lm(xv.mu.DJF$data~xv.mu.DJF$predicted)$coef[1],lm(xv.mu.DJF$data~xv.mu.DJ
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.mu.DJF)
+plot(xv.Mu.DJF)
 
 smry(Mu.DJF.geo$data)
 
@@ -1194,6 +1261,25 @@ hist(xv.mu.DJF$std.error,breaks = 10,freq = F,xlim=c(-3,3), main="", xlab="Resí
 
 dev.off()
 
+
+
+pdf("Figuras/xv_Mu-DJF.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+par(mfrow = c(1,2))
+plot(xv.Mu.DJF$predicted,xv.Mu.DJF$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1.5,adj=0,line=1)
+
+hist(xv.Mu.DJF$std.error,breaks = 9,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xv_Mu-DJF.pdf",outfile = "Figuras/xv_Mu-DJF.pdf")
+
+
+
+
 ##-----------------------------------------------------------------------------##
 
 ## Parametros DJF Sigma
@@ -1204,31 +1290,38 @@ dev.off()
 names(dados)
 
 dim(dados)
+
 Sigma.DJF.geo<-as.geodata(dados,coords.col = 1:2, data.col = 4,borders=T)
 Sigma.DJF.geo$borders<-limite
-
+boxplot(Sigma.DJF.geo$data)
 plot(Sigma.DJF.geo,low=T)
 summary(Sigma.DJF.geo)
 
 ## Valores positivos para BOXCOX
 
 
-
-boxcox(Sigma.DJF.geo$data~1) 
-boxcox(Sigma.DJF.geo$data~1,lambda=seq(-2,-1,l=20))
+##Sigma.DJF.geo$data
+##boxcox(Sigma.DJF.geo$data~1) 
+##boxcox(Sigma.DJF.geo$data~1,lambda=seq(-2,-1,l=20))
+#### 
+##trans<-boxcox(Sigma.DJF.geo$data~1,lambda=seq(-1.4,-1.2,l=20));trans # dando zoom para ver qual lambda usar
+##lambda.sigma.DJF<-with(trans, x[which.max(y)]);lambda.sigma.DJF # Valor máximo de Lambda
 ## 
-trans<-boxcox(Sigma.DJF.geo$data~1,lambda=seq(-1.4,-1.2,l=20));trans # dando zoom para ver qual lambda usar
-lambda.sigma.DJF<-with(trans, x[which.max(y)]);lambda.sigma.DJF # Valor máximo de Lambda
- 
-Sigma.DJF.geo$data<-(((Sigma.DJF.geo$data^(lambda.sigma.DJF)) - 1)/lambda.sigma.DJF);Sigma.DJF.geo$data #normalizando - (X^lambda.sigma.DJF)-1/lambda.sigma.DJF
-DJF.sigma.inv<-(((lambda.sigma.DJF*Sigma.DJF.geo$data)+1)^(1/lambda.sigma.DJF))-5;DJF.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
+##Sigma.DJF.geo$data<-(((Sigma.DJF.geo$data^(lambda.sigma.DJF)) - 1)/lambda.sigma.DJF);Sigma.DJF.geo$data #normalizando - (X^lambda.sigma.DJF)-1/lambda.sigma.DJF
+##DJF.sigma.inv<-(((lambda.sigma.DJF*Sigma.DJF.geo$data)+1)^(1/lambda.sigma.DJF))-5;DJF.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_sigmaDJF.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_SigmaDJF.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Sigma.DJF.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(Sigma.DJF.geo$data~1,ylab = "Log-Verossimilhança",lambda=seq(-5,5)) 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.DJF.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_SigmaDJF.pdf",outfile="Figuras/BoxCox_SigmaDJF.pdf")
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1301,46 +1394,54 @@ trend_Sigma.DJF <- dados[,c(5,6,8:25,1,2)]
 names(trend_Sigma.DJF)
 
 Sigma.DJF <- list()
-Sigma.DJF$lf1 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,10]+trend_Sigma.DJF[,12],ini=c(0.04,23.35), nug=0.02,)
-Sigma.DJF$lf2 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,10]+poly(trend_Sigma.DJF[,6],2),ini=c(0.04,23.35), nug=0.02,)
-Sigma.DJF$lf3 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,10]+poly(trend_Sigma.DJF[,18],2),ini=c(0.04,23.35), nug=0.02,)
-Sigma.DJF$lf4 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2),ini=c(0.04,23.35), nug=0.02,)
-Sigma.DJF$lf5 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,12]+poly(trend_Sigma.DJF[,6],2),ini=c(0.04,23.35), nug=0.02,)
-Sigma.DJF$lf6 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,12]+poly(trend_Sigma.DJF[,18],2),ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf1 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,13]+trend_Sigma.DJF[,18],ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf2 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,13]+poly(trend_Sigma.DJF[,9],2),ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf3 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,18]+poly(trend_Sigma.DJF[,8],2),ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf4 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~poly(trend_Sigma.DJF[,9],2)+poly(trend_Sigma.DJF[,8],2),ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf5 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,18]+poly(trend_Sigma.DJF[,9],2),ini=c(0.04,23.35), nug=0.02,)
+Sigma.DJF$lf6 <- likfit(Sigma.DJF.geo, cov.model="gau", trend =~trend_Sigma.DJF[,13]+poly(trend_Sigma.DJF[,8],2),ini=c(0.04,23.35), nug=0.02,)
 
 sort(sapply(Sigma.DJF, AIC))
-plot(Sigma.DJF.geo,low=T,trend=~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2))
+plot(Sigma.DJF.geo,low=T,trend=~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))
 
-postscript("Figuras/Vario-sigma_DJF.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
-v.sigma.DJF<-variog(Sigma.DJF.geo,max.dist=150,uvec=seq(0, 150, by=10),trend =~poly(trend_Sigma.DJF[,19],2)+poly(trend_Sigma.DJF[,7],2))
-plot(v.sigma.DJF,xlab="Distância (km)",ylab=expression(gamma(u)),ylim = c(0.025,0.08))
+
+pdf("Figuras/Vario-Sigma_DJF.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+v.sigma.DJF<-variog(Sigma.DJF.geo,max.dist=150,uvec=seq(0, 150, by=10),trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))
+plot(v.sigma.DJF,xlab="Distância (km)",ylab=expression(gamma(u)),ylim = c(0.01,0.04))
 lines(lowess(v.sigma.DJF$u,v.sigma.DJF$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Sigma_DJF.pdf",outfile = "Figuras/Vario-Sigma_DJF.pdf")
+
+
 
 
 ##-----------------------------------------------------------------------------##
-## uMelhor modelo trend=~Prec_media+Param_DJF.sigma
+## Melhor modelo trend=~Prec_media+Param_DJF.sigma
 ## Conclusão: vale a pena usar o modelo com retirada de tendência "1st" pq p-valor < 0,05 e AIC menor
 ##-----------------------------------------------------------------------------
 
 Sigma.DJFlf4<-list()
-Sigma.DJFlf4$exp <- likfit(Sigma.DJF.geo, ini=c(0.04,23.35), nug=0.02,trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2))
-Sigma.DJFlf4$gau <- likfit(Sigma.DJF.geo, cov.model = "gau", ini=c(0.05,17.84), nug=0.02,trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2))  
-Sigma.DJFlf4$sph <- likfit(Sigma.DJF.geo, cov.model = "sph", ini=c(0.04,47.57), nug=0.02,trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2)) 
-Sigma.DJFlf4$cir <- likfit(Sigma.DJF.geo, cov.model = "cir", ini=c(0.04,47.57), nug=0.02,trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2))
-Sigma.DJFlf4$kappa1.5 <- likfit(Sigma.DJF.geo, cov.model = "mat", kappa= 1.5, ini=c(0.04,11.89), nug=0.02,trend =~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2))  
-Sigma.DJFlf4$kappa2.5 <- likfit(Sigma.DJF.geo, cov.model = "mat", kappa= 2.5, ini=c(0.04,11.89), nug=0.02,trend=~poly(trend_Sigma.DJF[,18],2)+poly(trend_Sigma.DJF[,6],2)) 
+Sigma.DJFlf4$exp <- likfit(Sigma.DJF.geo, ini=c(0.04,23.35), nug=0.02,trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))
+Sigma.DJFlf4$gau <- likfit(Sigma.DJF.geo, cov.model = "gau", ini=c(0.05,17.84), nug=0.02,trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))  
+Sigma.DJFlf4$sph <- likfit(Sigma.DJF.geo, cov.model = "sph", ini=c(0.04,47.57), nug=0.02,trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2)) 
+Sigma.DJFlf4$cir <- likfit(Sigma.DJF.geo, cov.model = "cir", ini=c(0.04,47.57), nug=0.02,trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))
+Sigma.DJFlf4$kappa1.5 <- likfit(Sigma.DJF.geo, cov.model = "mat", kappa= 1.5, ini=c(0.04,11.89), nug=0.02,trend =~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2))  
+Sigma.DJFlf4$kappa2.5 <- likfit(Sigma.DJF.geo, cov.model = "mat", kappa= 2.5, ini=c(0.04,11.89), nug=0.02,trend=~poly(trend_Sigma.DJF[,8],2)+poly(trend_Sigma.DJF[,9],2)) 
 
 
 ##-----------------------------------------------------------------------------
 
+
 sort(sapply(Sigma.DJFlf4, AIC))
 
-summary(Sigma.DJFlf4$sph)
-Sigma.DJFlf4$sph$parameters.summary
-Sigma.DJFlf4$sph$phi
-Sigma.DJFlf4$sph$sigmasq
-Sigma.DJFlf4$sph$tausq
+summary(Sigma.DJFlf4$gau)
+Sigma.DJFlf4$gau$parameters.summary
+Sigma.DJFlf4$gau$phi
+Sigma.DJFlf4$gau$sigmasq
+Sigma.DJFlf4$gau$tausq
   
 plot(v.sigma.DJF,xlab="Distance (km)",ylab=expression(gamma(u)))#,ylim =c(0,4e-6)
 lines(Sigma.DJFlf4$exp,col=1)
@@ -1362,14 +1463,14 @@ points(gr, pch=19, cex=0.24,col=4)
 summary(gr)
 
 ## Krigagem
-Sigma.DJFlf4$sph
-kc.sigma.DJF <- krige.conv(Sigma.DJF.geo, locations = grid, krige=krige.control(obj=Sigma.DJFlf4$sph))
+Sigma.DJFlf4$gau
+kc.sigma.DJF <- krige.conv(Sigma.DJF.geo, locations = grid, krige=krige.control(obj=Sigma.DJFlf4$gau))
 attributes(kc.sigma.DJF)
-kc.sigma.DJF$predict<-(backtransform.moments(lambda=lambda.sigma.DJF,mean=kc.sigma.DJF$predict,variance=kc.sigma.DJF$krige.var)$mean)
-mean(kc.sigma.DJF$predict)
 
-Sigma_DJF_krige <- cbind(grid*1000,kc.sigma.DJF$predict)
-write.table(Sigma_DJF_krige,"SigmaDJF.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.DJF[1:2])), fname = "SigmaDJF.tiff", drivername="GTiff")
+
+##Sigma_DJF_krige <- cbind(grid*1000,kc.sigma.DJF$predict)
+##write.table(Sigma_DJF_krige,"SigmaDJF.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.sigma.DJF$predict)
@@ -1385,38 +1486,57 @@ text(400,6750,labels = "Sistema de Coordenadas Projetadas UTM \n Datum: SAD/69 Z
 dev.off()
 
 
+Sigma.DJF.geo$data
+
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.sigma.DJF<-xvalid(Sigma.DJF.geo,model=Sigma.DJFlf4$sph)
-names(xv.sigma.DJF)
+xv.Sigma.DJF<-xvalid(Sigma.DJF.geo,model=Sigma.DJFlf4$gau)
+names(xv.Sigma.DJF)
 
-plot(xv.sigma.DJF$predicted,xv.sigma.DJF$data)
+
+(RMSEDJF <- sqrt(mean((xv.Sigma.DJF$predicted-xv.Sigma.DJF$data)^2)))
+(pbiasDJF <-(sum(xv.Sigma.DJF$predicted-xv.Sigma.DJF$data)/sum(xv.Sigma.DJF$data))*100)
+
+(rRMSEDJF <- (RMSEDJF/mean(xv.Sigma.DJF$data))*100)
+ggof(xv.Sigma.DJF$predicted,xv.Sigma.DJF$data)
+
+names(dados)
+plot(xv.Sigma.DJF$predicted,xv.Sigma.DJF$data)
 abline(0,1)
 abline(lm(xv.sigma.DJF$data~xv.sigma.DJF$predicted)$coef[1],lm(xv.sigma.DJF$data~xv.sigma.DJF$predicted)$coef[2])
 
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.sigma.DJF)
+plot(xv.Sigma.DJF)
 
 smry(Sigma.DJF.geo$data)
 
 
-postscript("Figuras/xv_sigma-DJF.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
 
+pdf("Figuras/xv_Sigma-DJF.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.sigma.DJF$predicted,xv.sigma.DJF$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+plot(xv.Sigma.DJF$predicted,xv.Sigma.DJF$std.error,ylim = c(-3,3),xlim = c(0.5,1.5), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.sigma.DJF$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Sigma.DJF$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Sigma-DJF.pdf",outfile = "Figuras/xv_Sigma-DJF.pdf")
+
+(SQE <- (sum(xv.Sigma.JJA$error^2))/length(xv.Sigma.JJA$error))
+
+(ui <- (xv.Sigma.JJA$error^2)/SQE)
+(mod <- lm(ui~xv.Sigma.JJA$predicted))
+
+SQR <- sum((mod$fitted.values-mean(ui))^2)
+
+pchisq(sum(SQR)/2,1,lower.tail = F)
 
 ##-----------------------------------------------------------------------------##
 
@@ -1461,6 +1581,20 @@ par(mfrow = c(1,2))
 hist(Mu.MAM.geo$data,main="", xlab="",ylab = "Frequência")
 boxcox(MAM.mu~1,ylab = "Log-Verossimilhança") 
 dev.off()
+
+pdf("Figuras/BoxCox_MuMAM.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
+par(mfrow = c(1,2))
+hist(Mu.MAM.geo$data,main="", xlab="",ylab = "Frequência")
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(MAM.mu~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
+dev.off()
+embed_fonts("Figuras/BoxCox_MuMAM.pdf",outfile="Figuras/BoxCox_MuMAM.pdf")
+
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1542,11 +1676,16 @@ Mu.MAM$lf6 <- likfit(Mu.MAM.geo, cov.model="gau", trend =~trend_Mu.MAM[,19]+poly
 sort(sapply(Mu.MAM, AIC))
 plot(Mu.MAM.geo,low=T,trend=~trend_Mu.MAM[,3]+trend_Mu.MAM[,12])
 
-postscript("Figuras/Vario-mu_MAM.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-Mu_MAM.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.mu.MAM<-variog(Mu.MAM.geo,max.dist=150,uvec=seq(0, 150, by=15),trend =~trend_Mu.MAM[,3]+trend_Mu.MAM[,12])
 plot(v.mu.MAM,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.mu.MAM$u,v.mu.MAM$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Mu_MAM.pdf",outfile = "Figuras/Vario-Mu_MAM.pdf")
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -1600,8 +1739,10 @@ attributes(kc.mu.MAM)
 ##kc.mu.MAM$predict<-(backtransform.moments(lambda=lambda.mu.MAM,mean=kc.mu.MAM$predict,variance=kc.mu.MAM$krige.var)$mean)-5
 kc.mu.MAM$predict
 
-Mu_MAM_krige <- cbind(grid*1000,kc.mu.MAM$predict)
-write.table(Mu_MAM_krige,"MuMAM.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.mu.MAM[1:2])), fname = "MuMAM.tiff", drivername="GTiff")
+
+##Mu_MAM_krige <- cbind(grid*1000,kc.mu.MAM$predict)
+##write.table(Mu_MAM_krige,"MuMAM.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.mu.MAM$predict)
@@ -1620,8 +1761,16 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.mu.MAM<-xvalid(Mu.MAM.geo,model=Mu.MAMlf1$gau)
+xv.Mu.MAM<-xvalid(Mu.MAM.geo,model=Mu.MAMlf1$gau)
 names(xv.mu.MAM)
+
+
+(RMSEMAM <- sqrt(mean((xv.Mu.MAM$predicted-xv.Mu.MAM$data)^2)))
+(pbiasMAM <-(sum(xv.Mu.MAM$predicted-xv.Mu.MAM$data)/sum(xv.Mu.MAM$data))*100)
+
+(rRMSEMAM <- (RMSEMAM/mean(xv.Mu.MAM$data))*100)
+
+
 
 plot(xv.mu.MAM$predicted,xv.mu.MAM$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
@@ -1630,7 +1779,7 @@ abline(lm(xv.mu.MAM$data~xv.mu.MAM$predicted)$coef[1],lm(xv.mu.MAM$data~xv.mu.MA
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.mu.MAM)
+plot(xv.Mu.MAM)
 
 smry(Mu.MAM.geo$data)
 
@@ -1649,6 +1798,22 @@ hist(xv.mu.MAM$std.error,breaks = 10,freq = F,xlim=c(-3,3), main="", xlab="Resí
 #mtext("(b)",cex=1.2,adj=0,line=1)
 
 dev.off()
+
+pdf("Figuras/xv_Mu-MAM.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+par(mfrow = c(1,2))
+plot(xv.Mu.MAM$predicted,xv.Mu.MAM$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1.5,adj=0,line=1)
+
+hist(xv.Mu.MAM$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xv_Mu-MAM.pdf",outfile = "Figuras/xv_Mu-MAM.pdf")
+
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -1680,11 +1845,17 @@ Sigma.MAM.geo$data<-(((Sigma.MAM.geo$data^(lambda.sigma.MAM)) - 1)/lambda.sigma.
 MAM.sigma.inv<-(((lambda.sigma.MAM*Sigma.MAM.geo$data)+1)^(1/lambda.sigma.MAM))-5;MAM.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_sigmaMAM.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_SigmaMAM.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Sigma.MAM.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(Sigma.MAM.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.MAM.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_SigmaMAM.pdf",outfile="Figuras/BoxCox_SigmaMAM.pdf")
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1768,14 +1939,24 @@ sort(sapply(Sigma.MAM, AIC))
 plot(Sigma.MAM.geo,low=T,trend=~poly(trend_Sigma.MAM[,21],2)+poly(trend_Sigma.MAM[,8],2))
 
 postscript("Figuras/Vario-sigma_MAM.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+dev.off()
+
+pdf("Figuras/Vario-Sigma_MAM.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.sigma.MAM<-variog(Sigma.MAM.geo,max.dist=150,uvec=seq(0, 150, by=10),trend =~poly(trend_Sigma.MAM[,21],2)+poly(trend_Sigma.MAM[,8],2))
 plot(v.sigma.MAM,xlab="Distância (km)",ylab=expression(gamma(u)),ylim = c(0.01,0.035))
 lines(lowess(v.sigma.MAM$u,v.sigma.MAM$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Sigma_MAM.pdf",outfile = "Figuras/Vario-Sigma_MAM.pdf")
+
+
 
 
 ##-----------------------------------------------------------------------------##
-## uMelhor modelo trend=~Prec_media+Param_MAM.sigma
+## Melhor modelo trend=~Prec_media+Param_MAM.sigma
 ## Conclusão: vale a pena usar o modelo com retirada de tendência "1st" pq p-valor < 0,05 e AIC menor
 ##-----------------------------------------------------------------------------
 
@@ -1824,8 +2005,10 @@ attributes(kc.sigma.MAM)
 ##kc.sigma.MAM$predict<-(backtransform.moments(lambda=lambda.sigma.MAM,mean=kc.sigma.MAM$predict,variance=kc.sigma.MAM$krige.var)$mean)
 ##kc.sigma.MAM$predict
 
-Sigma_MAM_krige <- cbind(grid*1000,kc.sigma.MAM$predict)
-write.table(Sigma_MAM_krige,"SigmaMAM.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.MAM[1:2])), fname = "SigmaMAM.tiff", drivername="GTiff")
+
+##Sigma_MAM_krige <- cbind(grid*1000,kc.sigma.MAM$predict)
+##write.table(Sigma_MAM_krige,"SigmaMAM.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.sigma.MAM$predict)
@@ -1844,8 +2027,17 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.sigma.MAM<-xvalid(Sigma.MAM.geo,model=Sigma.MAMlf4$sph)
+xv.Sigma.MAM<-xvalid(Sigma.MAM.geo,model=Sigma.MAMlf4$sph)
 names(xv.sigma.MAM)
+
+
+(RMSEMAM <- sqrt(mean((xv.Sigma.MAM$predicted-xv.Sigma.MAM$data)^2)))
+(pbiasMAM <-(sum(xv.Sigma.MAM$predicted-xv.Sigma.MAM$data)/sum(xv.Sigma.MAM$data))*100)
+
+(rRMSEMAM <- (RMSEMAM/mean(xv.Sigma.MAM$data))*100)
+
+
+
 
 plot(xv.sigma.MAM$predicted,xv.sigma.MAM$data)
 abline(0,1)
@@ -1873,6 +2065,27 @@ hist(xv.sigma.MAM$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Res�
 #mtext("(b)",cex=1.2,adj=0,line=1)
 
 dev.off()
+
+pdf("Figuras/xv_Sigma-MAM.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
+par(mfrow = c(1,2))
+plot(xv.Sigma.MAM$predicted,xv.Sigma.MAM$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+abline(h=0)
+mtext("(a)",cex=1.5,adj=0,line=1)
+
+hist(xv.Sigma.MAM$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
+
+dev.off()
+embed_fonts("Figuras/xv_Sigma-MAM.pdf",outfile = "Figuras/xv_Sigma-MAM.pdf")
+
+(SQR <- (sum(xv.Sigma.MAM$error^2))/length(xv.Sigma.MAM$error))
+(ui <- (xv.Sigma.MAM$error^2)/SQE)
+(mod <- lm(ui~xv.Sigma.MAM$predicted))
+SQR <- sum((mod$fitted.values-mean(ui))^2)
+pchisq(sum(SQR)/2,1,lower.tail = F)
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -1912,11 +2125,18 @@ boxcox(JJA.mu~1,lambda=seq(0,1,l=20))
 ##JJA.mu.inv<-(((lambda.mu.JJA*Mu.JJA.geo$data)+1)^(1/lambda.mu.JJA))-5;JJA.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_muJJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_MuJJA.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Mu.JJA.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(JJA.mu~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(JJA.mu~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_MuJJA.pdf",outfile="Figuras/BoxCox_MuJJA.pdf")
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1998,11 +2218,16 @@ Mu.JJA$lf6 <- likfit(Mu.JJA.geo, cov.model="gau", trend =~trend_Mu.JJA[,19]+poly
 sort(sapply(Mu.JJA, AIC))
 plot(Mu.JJA.geo,low=T,trend=~trend_Mu.JJA[,3]+trend_Mu.JJA[,14])
 
-postscript("Figuras/Vario-mu_JJA.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-Mu_JJA.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.mu.JJA<-variog(Mu.JJA.geo,max.dist=150,uvec=seq(0, 150, by=13),trend =~trend_Mu.JJA[,3]+trend_Mu.JJA[,14])
 plot(v.mu.JJA,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.mu.JJA$u,v.mu.JJA$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Mu_JJA.pdf",outfile = "Figuras/Vario-Mu_JJA.pdf")
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -2056,8 +2281,10 @@ attributes(kc.mu.JJA)
 ##kc.mu.JJA$predict<-(backtransform.moments(lambda=lambda.mu.JJA,mean=kc.mu.JJA$predict,variance=kc.mu.JJA$krige.var)$mean)-5
 kc.mu.JJA$predict
 
-Mu_JJA_krige <- cbind(grid*1000,kc.mu.JJA$predict)
-write.table(Mu_JJA_krige,"MuJJA.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.mu.JJA[1:2])), fname = "MuJJA.tiff", drivername="GTiff")
+
+##Mu_JJA_krige <- cbind(grid*1000,kc.mu.JJA$predict)
+##write.table(Mu_JJA_krige,"MuJJA.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.mu.JJA$predict)
 
@@ -2075,8 +2302,16 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.mu.JJA<-xvalid(Mu.JJA.geo,model=Mu.JJAlf1$sph)
+xv.Mu.JJA<-xvalid(Mu.JJA.geo,model=Mu.JJAlf1$sph)
 names(xv.mu.JJA)
+
+
+(RMSEJJA <- sqrt(mean((xv.Mu.JJA$predicted-xv.Mu.JJA$data)^2)))
+(pbiasJJA <-(sum(xv.Mu.JJA$predicted-xv.Mu.JJA$data)/sum(xv.Mu.JJA$data))*100)
+
+(rRMSEJJA <- (RMSEJJA/mean(xv.Mu.JJA$data))*100)
+
+
 
 plot(xv.mu.JJA$predicted,xv.mu.JJA$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
@@ -2085,25 +2320,34 @@ abline(lm(xv.mu.JJA$data~xv.mu.JJA$predicted)$coef[1],lm(xv.mu.JJA$data~xv.mu.JJ
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.mu.JJA)
+plot(xv.Mu.JJA)
 
 smry(Mu.JJA.geo$data)
 
 
-postscript("Figuras/xv_mu-JJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_Mu-JJA.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.mu.JJA$predicted,xv.mu.JJA$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+plot(xv.Mu.JJA$predicted,xv.Mu.JJA$std.error,ylim = c(-3,3),xlim = c(-4.5,-3.65), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.mu.JJA$std.error,breaks = 10,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Mu.JJA$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Mu-JJA.pdf",outfile = "Figuras/xv_Mu-JJA.pdf")
+
+(SQE <- (sum(xv.Mu.JJA$error^2))/length(xv.Mu.JJA$error))
+
+(ui <- (xv.Mu.JJA$error^2)/SQE)
+(mod <- lm(ui~xv.Mu.JJA$predicted))
+
+SQR <- sum((mod$fitted.values-mean(ui))^2)
+
+pchisq(sum(SQR)/2,1,lower.tail = F)
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -2123,8 +2367,6 @@ summary(Sigma.JJA.geo)
 
 ## Valores positivos para BOXCOX
 
-
-
 boxcox(Sigma.JJA.geo$data~1) 
 boxcox(Sigma.JJA.geo$data~1,lambda=seq(-2,-1,l=20))
 ## 
@@ -2135,11 +2377,19 @@ Sigma.JJA.geo$data<-(((Sigma.JJA.geo$data^(lambda.sigma.JJA)) - 1)/lambda.sigma.
 JJA.sigma.inv<-(((lambda.sigma.JJA*Sigma.JJA.geo$data)+1)^(1/lambda.sigma.JJA))-5;JJA.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_sigmaJJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_SigmaJJA.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Sigma.JJA.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(Sigma.JJA.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.JJA.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_SigmaJJA.pdf",outfile="Figuras/BoxCox_SigmaJJA.pdf")
+
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -2222,11 +2472,18 @@ Sigma.JJA$lf6 <- likfit(Sigma.JJA.geo, cov.model="gau", trend =~trend_Sigma.JJA[
 sort(sapply(Sigma.JJA, AIC))
 plot(Sigma.JJA.geo,low=T,trend=~poly(trend_Sigma.JJA[,18],2)+poly(trend_Sigma.JJA[,8],2))
 
-postscript("Figuras/Vario-sigma_JJA.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+pdf("Figuras/Vario-Sigma_JJA.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.sigma.JJA<-variog(Sigma.JJA.geo,max.dist=150,uvec=seq(0, 150, by=10),trend =~poly(trend_Sigma.JJA[,18],2)+poly(trend_Sigma.JJA[,8],2))
 plot(v.sigma.JJA,xlab="Distância (km)",ylab=expression(gamma(u)),ylim = c(0.01,0.035))
 lines(lowess(v.sigma.JJA$u,v.sigma.JJA$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Sigma_JJA.pdf",outfile = "Figuras/Vario-Sigma_JJA.pdf")
+
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -2279,8 +2536,10 @@ attributes(kc.sigma.JJA)
 ##kc.sigma.JJA$predict<-(backtransform.moments(lambda=lambda.sigma.JJA,mean=kc.sigma.JJA$predict,variance=kc.sigma.JJA$krige.var)$mean)
 ##kc.sigma.JJA$predict
 
-Sigma_JJA_krige <- cbind(grid*1000,kc.sigma.JJA$predict)
-write.table(Sigma_JJA_krige,"SigmaJJA.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.JJA[1:2])), fname = "SigmaJJA.tiff", drivername="GTiff")
+
+##Sigma_JJA_krige <- cbind(grid*1000,kc.sigma.JJA$predict)
+##write.table(Sigma_JJA_krige,"SigmaJJA.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.sigma.JJA$predict)
@@ -2299,8 +2558,15 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.sigma.JJA<-xvalid(Sigma.JJA.geo,model=Sigma.JJAlf4$sph)
+xv.Sigma.JJA<-xvalid(Sigma.JJA.geo,model=Sigma.JJAlf4$sph)
 names(xv.sigma.JJA)
+
+
+(RMSEJJA <- sqrt(mean((xv.Sigma.JJA$predicted-xv.Sigma.JJA$data)^2)))
+(pbiasJJA <-(sum(xv.Sigma.JJA$predicted-xv.Sigma.JJA$data)/sum(xv.Sigma.JJA$data))*100)
+
+(rRMSEJJA <- (RMSEJJA/mean(xv.Sigma.JJA$data))*100)
+ggof(xv.Sigma.JJA$predicted,xv.Sigma.JJA$data)
 
 plot(xv.sigma.JJA$predicted,xv.sigma.JJA$data)
 abline(0,1)
@@ -2309,27 +2575,37 @@ abline(lm(xv.sigma.JJA$data~xv.sigma.JJA$predicted)$coef[1],lm(xv.sigma.JJA$data
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.sigma.JJA)
+plot(xv.Sigma.JJA)
 
 smry(Sigma.JJA.geo$data)
 
-
-postscript("Figuras/xv_sigma-JJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_Sigma-JJA.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.sigma.JJA$predicted,xv.sigma.JJA$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos",xlim = c(0.5,1.5))
+plot(xv.Sigma.JJA$predicted,xv.Sigma.JJA$std.error,ylim = c(-3,3),xlim = c(0.5,1.3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.sigma.JJA$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Sigma.JJA$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Sigma-JJA.pdf",outfile = "Figuras/xv_Sigma-JJA.pdf")
+
+
+(SQE <- (sum(xv.Sigma.JJA$error^2))/length(xv.Sigma.JJA$error))
+
+(ui <- (xv.Sigma.JJA$error^2)/SQE)
+(mod <- lm(ui~xv.Sigma.JJA$predicted))
+
+SQR <- sum((mod$fitted.values-mean(ui))^2)
+
+pchisq(sum(SQR)/2,1,lower.tail = F)
+
 
 ##-----------------------------------------------------------------------------##
+
 
 
 ## Parâmetros Primavera
@@ -2371,6 +2647,21 @@ par(mfrow = c(1,2))
 hist(Mu.SON.geo$data,main="", xlab="",ylab = "Frequência")
 boxcox(SON.mu~1,ylab = "Log-Verossimilhança") 
 dev.off()
+
+
+pdf("Figuras/BoxCox_MuSON.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
+par(mfrow = c(1,2))
+hist(Mu.SON.geo$data,main="", xlab="",ylab = "Frequência")
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(SON.mu~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
+dev.off()
+embed_fonts("Figuras/BoxCox_MuSON.pdf",outfile="Figuras/BoxCox_MuSON.pdf")
+
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -2452,11 +2743,18 @@ Mu.SON$lf6 <- likfit(Mu.SON.geo, cov.model="gau", trend =~trend_Mu.SON[,12]+poly
 sort(sapply(Mu.SON, AIC))
 plot(Mu.SON.geo,low=T,trend=~poly(trend_Mu.SON[,3],2)+poly(trend_Mu.SON[,19],2))
 
-postscript("Figuras/Vario-mu_SON.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+
+pdf("Figuras/Vario-Mu_SON.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.mu.SON<-variog(Mu.SON.geo,max.dist=150,uvec=seq(0, 150, by=15),trend =~poly(trend_Mu.SON[,3],2)+poly(trend_Mu.SON[,19],2))
 plot(v.mu.SON,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.mu.SON$u,v.mu.SON$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Mu_SON.pdf",outfile = "Figuras/Vario-Mu_SON.pdf")
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -2510,6 +2808,8 @@ attributes(kc.mu.SON)
 ##kc.mu.SON$predict<-(backtransform.moments(lambda=lambda.mu.SON,mean=kc.mu.SON$predict,variance=kc.mu.SON$krige.var)$mean)-5
 kc.mu.SON$predict
 
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.mu.SON[1:2])), fname = "MuSON.tiff", drivername="GTiff")
+
 Mu_SON_krige <- cbind(grid*1000,kc.mu.SON$predict)
 write.table(Mu_SON_krige,"MuSON.ascii",col.names = F,row.names=F,quote=F)
 
@@ -2530,8 +2830,16 @@ dev.off()
 
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.mu.SON<-xvalid(Mu.SON.geo,model=Mu.SONlf4$sph)
+xv.Mu.SON<-xvalid(Mu.SON.geo,model=Mu.SONlf4$sph)
 names(xv.mu.SON)
+
+
+(RMSESON <- sqrt(mean((xv.Mu.SON$predicted-xv.Mu.SON$data)^2)))
+(pbiasSON <-(sum(xv.Mu.SON$predicted-xv.Mu.SON$data)/sum(xv.Mu.SON$data))*100)
+
+(rRMSESON <- (RMSESON/mean(xv.Mu.SON$data))*100)
+
+
 
 plot(xv.mu.SON$predicted,xv.mu.SON$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
@@ -2540,25 +2848,26 @@ abline(lm(xv.mu.SON$data~xv.mu.SON$predicted)$coef[1],lm(xv.mu.SON$data~xv.mu.SO
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.mu.SON)
+plot(xv.Mu.SON)
 
 smry(Mu.SON.geo$data)
 
 
-postscript("Figuras/xv_mu-SON.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_Mu-SON.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.mu.SON$predicted,xv.mu.SON$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
+plot(xv.Mu.SON$predicted,xv.Mu.SON$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.mu.SON$std.error,breaks = 10,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Mu.SON$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Mu-SON.pdf",outfile = "Figuras/xv_Mu-SON.pdf")
+
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -2590,11 +2899,19 @@ Sigma.SON.geo$data<-(((Sigma.SON.geo$data^(lambda.sigma.SON)) - 1)/lambda.sigma.
 SON.sigma.inv<-(((lambda.sigma.SON*Sigma.SON.geo$data)+1)^(1/lambda.sigma.SON))-5;SON.sigma.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_sigmaSON.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_SigmaSON.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(Sigma.SON.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(Sigma.SON.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(Sigma.SON.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_SigmaSON.pdf",outfile="Figuras/BoxCox_SigmaSON.pdf")
+
+
+
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -2677,11 +2994,18 @@ Sigma.SON$lf6 <- likfit(Sigma.SON.geo, cov.model="gau", trend =~trend_Sigma.SON[
 sort(sapply(Sigma.SON, AIC))
 plot(Sigma.SON.geo,low=T,trend=~poly(trend_Sigma.SON[,9],2)+poly(trend_Sigma.SON[,8],2))
 
-postscript("Figuras/Vario-sigma_SON.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+
+pdf("Figuras/Vario-Sigma_SON.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
+
 v.sigma.SON<-variog(Sigma.SON.geo,max.dist=150,uvec=seq(0, 150, by=15),trend =~poly(trend_Sigma.SON[,9],2)+poly(trend_Sigma.SON[,8],2))
 plot(v.sigma.SON,xlab="Distância (km)",ylab=expression(gamma(u)))#,ylim = c(0.01,0.035))
 lines(lowess(v.sigma.SON$u,v.sigma.SON$v))
+
 dev.off()
+embed_fonts("Figuras/Vario-Sigma_SON.pdf",outfile = "Figuras/Vario-Sigma_SON.pdf")
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -2734,8 +3058,10 @@ attributes(kc.sigma.SON)
 ##kc.sigma.SON$predict<-(backtransform.moments(lambda=lambda.sigma.SON,mean=kc.sigma.SON$predict,variance=kc.sigma.SON$krige.var)$mean)
 ##kc.sigma.SON$predict
 
-Sigma_SON_krige <- cbind(grid*1000,kc.sigma.SON$predict)
-write.table(Sigma_SON_krige,"SigmaSON.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.SON[1:2])), fname = "SigmaSON.tiff", drivername="GTiff")
+
+##Sigma_SON_krige <- cbind(grid*1000,kc.sigma.SON$predict)
+##write.table(Sigma_SON_krige,"SigmaSON.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.sigma.SON$predict)
@@ -2751,11 +3077,17 @@ text(400,6750,labels = "Sistema de Coordenadas Projetadas UTM \n Datum: SAD/69 Z
 dev.off()
 
 
-
 ##-----------------------------------------------------------------------------
 ## Validação cruzada
-xv.sigma.SON<-xvalid(Sigma.SON.geo,model=Sigma.SONlf4$gau)
+xv.Sigma.SON<-xvalid(Sigma.SON.geo,model=Sigma.SONlf4$gau)
 names(xv.sigma.SON)
+
+
+(RMSESON <- sqrt(mean((xv.Sigma.SON$predicted-xv.Sigma.SON$data)^2)))
+(pbiasSON <-(sum(xv.Sigma.SON$predicted-xv.Sigma.SON$data)/sum(xv.Sigma.SON$data))*100)
+
+(rRMSESON <- (RMSESON/mean(xv.Sigma.SON$data))*100)
+
 
 plot(xv.sigma.SON$predicted,xv.sigma.SON$data)
 abline(0,1)
@@ -2764,25 +3096,27 @@ abline(lm(xv.sigma.SON$data~xv.sigma.SON$predicted)$coef[1],lm(xv.sigma.SON$data
 
 par(mfcol=c(5,2), mar=c(2.3,2.3,.5,.5), mgp=c(1.3, .6, 0))
 
-plot(xv.sigma.SON)
+plot(xv.Sigma.SON)
 
 smry(Sigma.SON.geo$data)
 
 
-postscript("Figuras/xv_sigma-SON.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_Sigma-SON.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
-plot(xv.sigma.SON$predicted,xv.sigma.SON$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos",xlim = c(0.5,1.5))
+plot(xv.Sigma.SON$predicted,xv.Sigma.SON$std.error,ylim = c(-3,3),xlim = c(0.5,1.5), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
-hist(xv.sigma.SON$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+hist(xv.Sigma.SON$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_Sigma-SON.pdf",outfile = "Figuras/xv_Sigma-SON.pdf")
+
+
+
 
 ##-----------------------------------------------------------------------------##
 
@@ -2802,7 +3136,7 @@ Vr <- function(mu, sigma, area, T,Qf){
 Vr <- ((((pqff-pqfi)*Qf)-integrate(function(p) Qp(mu,sigma,area,p),pqfi,pqff)$value)*(60*60*24*365))/10^6
 return(Vr)    
 }
-
+optim()
 
 Q98_ANO <- Qp(kc.mu.ANO$predict,kc.sigma.ANO$predict,1,0.98)*1000
 Q98_DJF <- Qp(kc.mu.DJF$predict,kc.sigma.DJF$predict,1,0.98)*1000
@@ -2816,24 +3150,8 @@ kc.sigma.MAM$Q98_MAM<- Q98_MAM
 kc.sigma.JJA$Q98_JJA<- Q98_JJA
 kc.sigma.SON$Q98_SON<- Q98_SON
 
-str(kc.sigma.ANO)
+str(kc.sigma.ANO[7])
 attr(kc.sigma.ANO,"prediction.locations")
-
-Q98_ANO_krige <- cbind(grid*1000,kc.sigma.ANO$Q98_ANO)
-write.table(Q98_ANO_krige,"Q98ANO.ascii",col.names = F,row.names=F,quote=F)
-
-Q98_DJF_krige <- cbind(grid*1000,kc.sigma.DJF$Q98_DJF)
-write.table(Q98_DJF_krige,"Q98DJF.ascii",col.names = F,row.names=F,quote=F)
-
-Q98_MAM_krige <- cbind(grid*1000,kc.sigma.MAM$Q98_MAM)
-write.table(Q98_MAM_krige,"Q98MAM.ascii",col.names = F,row.names=F,quote=F)
-
-Q98_JJA_krige <- cbind(grid*1000,kc.sigma.JJA$Q98_JJA)
-write.table(Q98_JJA_krige,"Q98JJA.ascii",col.names = F,row.names=F,quote=F)
-
-Q98_SON_krige <- cbind(grid*1000,kc.sigma.SON$Q98_SON)
-write.table(Q98_SON_krige,"Q98SON.ascii",col.names = F,row.names=F,quote=F)
-
 
 postscript("Figuras/Q98_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
 
@@ -2909,15 +3227,13 @@ for(i in 1:length(Qf_max)){
 }
 
 class(kc.sigma.ANO)
-kc.sigma.ANO$Vr <- Vr.Qfmax*10
+kc.sigma.ANO$Vr <- Vr.Qfmax
 kc.sigma.ANO$Qm_ANO<- Qm_ANO*1000
+str(kc.sigma.ANO[9])
 
-Vr.Qfmax_krige <- cbind(grid*1000,kc.sigma.ANO$Vr)
-write.table(Vr.Qfmax_krige,"VrQfmax.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.ANO[9])), fname = "Vr-Qfmax.tiff", drivername="GTiff")
 
-Qm.ANO_krige <- cbind(grid*1000,kc.sigma.ANO$Qm_ANO)
-write.table(Qm.ANO_krige,"QmANO.ascii",col.names = F,row.names=F,quote=F)
-
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.sigma.ANO[8])), fname = "QmANO.tiff", drivername="GTiff")
 
 
 postscript("Figuras/Qm_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")

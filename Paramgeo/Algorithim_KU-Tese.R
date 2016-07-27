@@ -12,8 +12,13 @@ dim(dados)
 head(dados)
 
 ## Coordenada do ponto a ser predito
-Xo <- c(569.3167,6893.750)
-Xo <- c(550,6950)   
+Xo <- c(670563.231,6831157.59)/1000
+
+## Area
+area <- 219.7403073
+
+
+
 
 ## Calcular a matrix de Distância entre os dados 
 d <- dist(dados[,2:3],diag = T,upper=T)
@@ -85,19 +90,20 @@ sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1
 (mu.ANO.ko <- sum(dados$mu_ANO*W.ko1))
 mu.ANO.ko
 ## Conferir na GeoR, não fazer em PHP
-dados <- read.csv("Param_geo.csv", head=T,dec=",",sep = ";")[-22,];dados$Centroid.Y<-dados$Centroid.Y/1000;dados$Centroid.X<-dados$Centroid.X/1000
-b <-as.geodata(dados,coords.col = 3:4, data.col = 7,covar.col = c(5,8))
+dados <- read.csv("ParamDJF.csv", head=T,dec=",",sep= ";")[,-c(1,27)];dados$Latitude<-dados$Latitude/1000;dados$Longitude<-dados$Longitude/1000
+b <-as.geodata(dados,coords.col = 1:2, data.col = 4)
 names(dados)
-## b$data <- b$data+5
-(b$data<-((((b$data+5)^(lambda.mu.ANO)) - 1)/lambda.mu.ANO)) #normalizando - (X^lambda)-1/lambda
-
+dir()
 summary(b)
 
-tau2.mu.ANO
-sigma2.mu.ANO
-phi.mu.ANO
+tau2.sig.DJF
+sigma2.sig.DJF
+phi.sig.DJF
 
-likkc <- likfit(b,cov.model = "gau",ini=c(sigma2.mu.ANO,phi.mu.ANO),fix.nugget = T, nug=tau2.mu.ANO,trend =~Prec_media+Param_ANO.sigma,lambda=1)
+trend_Mu.ANO <- dados[,c(5,6,8:25,1,2)]
+names(trend_Mu.ANO)
+
+likkc <- likfit(b,cov.model = "gau",ini=c(sigma2.sig.DJF-0.01,phi.sig.DJF),fix.nugget = T, trend = ~poly(trend_Mu.ANO[,8],2)+poly(trend_Mu.ANO[,9],2),nug=tau2.sig.DJF,lambda=1)
 likkc$parameters.summary
 likkc$trend
 likkc$sigmasq
@@ -107,6 +113,8 @@ likkc$sigmasq
 kc <- krige.conv(b, locations=Xo,krige=krige.control(obj=likkc))
 kc$predict
 kc$krige.var
+
+sig.DJF.ko
 
 (kc$predict <- backtransform.moments(lambda = lambda.mu.ANO, mean = kc$predict, variance = kc$krige.var)$mean)-5
 
@@ -150,6 +158,11 @@ sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1
 ## Predição
 (sigma.ANO.ko <- sum(dados$sigma_ANO*W.ko1))
 sigma.ANO.ko
+
+(Q98_ANO <- Qp(mu.ANO.ko,sigma.ANO.ko,area,0.98))
+area
+## FIM
+
 ## Definição dos parâmetros 
 ## DJF Mu
 
@@ -191,21 +204,14 @@ sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1
 ## Definição dos parâmetros 
 ## DJF sigma
 
-lambda.sig.DJF <- -1.337373737000
-tau2.sig.DJF   <- 0.022350960500
-sigma2.sig.DJF <-0.035153154130
-phi.sig.DJF    <-139.217883900000
-
-
-## Normalizando a variável
-
-(dados$sigma_DJF<-(((dados$sigma_DJF^(lambda.sig.DJF)) - 1)/lambda.sig.DJF)) #normalizando - (X^lambda)-1/lambda
-(MAM.mu.inv<-(((lambda.sig.DJF*dados$sigma_DJF)+1)^(1/lambda.sig.DJF))) #inverter e diminuir com 5 para encontrar a varivel original
+tau2.sig.DJF   <- 0.01308691549
+sig2.sig.DJF <-0.01831340988
+phi.sig.DJF    <-61.98482893
 
 
 ## Calcular a matrix R de semivariância entre os dados
 dados
-R <- as.matrix(tau2.sig.DJF+(sigma2.sig.DJF*((1.5*(d/phi.sig.DJF)-(0.5*(d/phi.sig.DJF)^3)))));colnames(R) <- NULL;R
+R <- as.matrix(tau2.sig.DJF+(sig2.sig.DJF*(1-exp(-d^2/phi.sig.DJF^2))));colnames(R) <- NULL;R
 
 ##diag(R) <- tau2.sig.DJF
 ## KO das variáveis externas 
@@ -215,7 +221,8 @@ R <- as.matrix(tau2.sig.DJF+(sigma2.sig.DJF*((1.5*(d/phi.sig.DJF)-(0.5*(d/phi.si
 R.ko <- rbind(cbind(R,rep(1,l=nrow(R))),c(rep(1,l=nrow(R)),0));R.ko
 
 ## calcular o vetor de correlação entre os dados e o ponto a ser predito
-r0 <- rbind(as.matrix(tau2.sig.DJF+(sigma2.sig.DJF*((1.5*(do/phi.sig.DJF)-(0.5*(do/phi.sig.DJF)^3))))),1);r0
+r0 <- rbind(as.matrix(tau2.sig.DJF+(sigma2.sig.DJF*(1-exp(-do^2/phi.sig.DJF^2)))),1);r0
+
 
 ## calcular a Matriz inversa de R.ko
 is.positive.definite(R.ko) #Se for falso fazer a inversa generalizada
@@ -230,17 +237,7 @@ sum(W.ko[-length(r0)]) ## Esse deve ser igual a 1
 (W.ko1 <- W.ko[-length(r0)])
 
 ## Predição
-
 (sig.DJF.ko <- sum(dados$sigma_DJF*W.ko1))
-dados$sigma_DJF
-W.ko1
-## Variância
-
-(var.sig.DJF.ko <- sum(r0[-length(r0)]*W.ko1))
-
-## inverter para encontrar a varivel original
-(sig.DJF.ko <- (((lambda.sig.DJF*sig.DJF.ko)+1)^(1/lambda.sig.DJF)*(1+((var.sig.DJF.ko*(1-lambda.sig.DJF))/(2*((lambda.sig.DJF*sig.DJF.ko)+1)^2)))))
-sig.DJF.ko
 
 
 ##-----------------------------------------------------------------------------##

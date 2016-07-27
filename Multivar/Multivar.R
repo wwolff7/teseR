@@ -45,7 +45,10 @@ colnames(Vars)
 
 
 resu <- prcomp(Vars,scale. = TRUE)
-summary(resu)
+summ <- summary(resu)
+attributes(summ)
+summ$sdev
+
 
 biplot(resu,col = c("gray", "black"),xlim = c(-0.4,0.3),ylim = c(-0.4,0.3))
 

@@ -5,9 +5,9 @@ require(RColorBrewer) # Para Paletas de cores
 require(hydroTSM) 
 colour<-colorRampPalette(c("white","blue","dark Blue"))
 require(MASS)
-require(rgdal)
 require(geoR)
-require(tikzDevice)
+require(compositions)
+require(rgdal)
 require(extrafont)
 fonts()
 loadfonts()
@@ -20,7 +20,7 @@ setwd("/home/wagner/MEGA/Doutorado/Rotinas R/Tese/IEBgeo")
 ##Ver documentação
 cov.spatial()
 trend.spatial()
-options(OutDec=",",digits=10,tikzSanitizeCharacters =c('$'))
+options(OutDec=",",digits=10)
 
 
 ##-----------------------------------------------------------------------------##
@@ -72,7 +72,13 @@ text(x[c(1,3,5)],y[4],labels=labels,adj=.5,cex=division.cex)
 dir()
 ##dados <- read.csv("Param_geo.csv", head=T,dec=",",sep= ";")[-22,];dados$Centroid.Y<-dados$Centroid.Y/1000;dados$Centroid.X<-dados$Centroid.X/1000
 
-dados <- read.csv("ParamANO.csv", head=T,dec=",",sep= "")[,-c(1,4,5,27)];dados$Latitude<-dados$Latitude/1000;dados$Longitude<-dados$Longitude/1000
+dados <- read.csv("ParamANO.csv", head=T,dec=",",sep="")[,-c(1,4,5,27)];dados$Latitude<-dados$Latitude/1000;dados$Longitude<-dados$Longitude/1000
+
+str(dados)
+
+dados$Area
+
+
 limite<- read.csv("Limite_SC.csv",h=T,sep=",",dec = ".");limite$Longitude<-limite$Longitude/1000;limite$Latitude<-limite$Latitude/1000
 
 summary(limite)
@@ -97,18 +103,25 @@ View(dados)
 dados
 
 ##-----------------------------------------------------------------------------##
-## Parametros ANO mu
+## Parametros IEB ANO 
 
 ## Análise exploratória geoestatística
 
 names(dados)
-
 dim(dados)
-IEB.ANO.geo<-as.geodata(dados,coords.col = 1:2, data.col = 5,borders=T)
+
+dados$IES_ANO <- 1-dados$IEB_ANO
+alrIE <- cbind(dados$Longitude,dados$Latitude,alr(cbind(dados$IEB_ANO,dados$IES_ANO)))
+
+IEB.ANO.geo<-as.geodata(alrIE,coords.col = 1:2, data.col = 3)
 IEB.ANO.geo$borders<-limite
 
+tmp <- alr(cbind(dados$IEB_ANO,dados$IES_ANO))
+inv <- alrInv(tmp)
+
+
 plot(IEB.ANO.geo,low=T)
-summary(limite)
+summary(dados[,5])
 
 ## Valores positivos para BOXCOX
 
@@ -121,20 +134,18 @@ boxcox(IEB.ANO.geo$data~1)
 ##Mu.ANO.geo$data<-(((ANO.mu^(lambda.mu.ANO)) - 1)/lambda.mu.ANO);Mu.ANO.geo$data #normalizando - (X^lambda.mu.ANO)-1/lambda.mu.ANO
 ##ANO.mu.inv<-(((lambda.mu.ANO*Mu.ANO.geo$data)+1)^(1/lambda.mu.ANO))-5;ANO.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
-bcIEBANO <- boxcox(IEB.ANO.geo$data~1,plotit = T,lambda = seq(-3,3),0.1)
+boxcox(IEB.ANO.geo$data~1,plotit = T,lambda = seq(-3,3),0.1)
 
-tikz("Figuras/plot.tex",onefile = T, width=18/2.54, height=12/2.54)
-
-##pdf("Figuras/BoxCox_IEBANO.pdf",onefile = T,family="CM Roman Greek", width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_IEBANO.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
 
 par(mfrow = c(1,2))
-hist(IEB.ANO.geo$data,main="", xlab="",ylab = "Frequ\\^{e}ncia")
-plot(bcIEBANO,ylab = "Log-Verossimilhan\\c{c}a",xlab = "$\\lambda$",type="l")
-abline(v=range(bcIEBANO$x[bcIEBANO$y > max(bcIEBANO$y)-qchisq(0.95,1)/2]),lty=2)
-legend('topleft',leg = 'IC 95 \\%',lty = 2,bty = 'n')
+hist(IEB.ANO.geo$data,main="", xlab="",ylab = "Frequência")
+mtext("(a)",line = 1,cex = 1.5,adj=0)
 
+boxcox(IEB.ANO.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
-
+embed_fonts("Figuras/BoxCox_IEBANO.pdf",outfile="Figuras/BoxCox_IEBANO.pdf")
 
 
 #-----------------------------------------------------------------------------
@@ -162,7 +173,7 @@ IEB.ANO[[i]] <- likfit(IEB.ANO.geo, cov.model="gau", trend =~trend_IEB.ANO[,i],i
 IEB.ANO[[ncol(trend_IEB.ANO)+1]] <- likfit(IEB.ANO.geo, cov.model="gau",ini=c(0.04,23.35), nug=0.02,)
 }
 
-sapply(IEB.ANO, AIC)
+order(sapply(IEB.ANO, AIC))
 
 names(trend_IEB.ANO)
 summary(IEB.ANO[[order(sapply(IEB.ANO, AIC))[1]]])
@@ -199,7 +210,7 @@ IEB.ANO3[[i]] <- likfit(IEB.ANO.geo, cov.model="gau", trend =~poly(trend3_IEB.AN
 }
 
 names(trend_IEB.ANO)
-sapply(IEB.ANO3, AIC)
+order(sapply(IEB.ANO3, AIC))
 summary(IEB.ANO3[[order(sapply(IEB.ANO3, AIC))[1]]])
 
 ## Testar combinações lineares e quadráticas
@@ -217,13 +228,14 @@ IEB.ANOfim$lf6 <- likfit(IEB.ANO.geo, cov.model="gau", trend =~trend_IEB.ANO[,6]
 sort(sapply(IEB.ANOfim, AIC))
 plot(IEB.ANO.geo,low=T,trend=~trend_IEB.ANO[,18]+poly(trend_IEB.ANO[,6],2))
 
-tikz()
-#postscript("Figuras/Vario-IEB_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+pdf("Figuras/Vario-IEB_ANO.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 v.IEB.ANO<-variog(IEB.ANO.geo,max.dist=200,uvec=seq(0, 200, by=15),trend =~trend_IEB.ANO[,18]+poly(trend_IEB.ANO[,6],2))
 plot(v.IEB.ANO,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.IEB.ANO$u,v.IEB.ANO$v))
 dev.off()
-
+embed_fonts("Figuras/Vario-IEB_ANO.pdf",outfile="Figuras/Vario-IEB_ANO.pdf")
 
 ##-----------------------------------------------------------------------------##
 ## Melhor modelo trend=~Prec_media+Param_ANO.sigma
@@ -276,19 +288,40 @@ summary(gr)
 IEB.ANOlf3$exp
 kc.IEB.ANO <- krige.conv(IEB.ANO.geo, locations = grid, krige=krige.control(obj=IEB.ANOlf3$exp))
 attributes(kc.IEB.ANO)
-##kc.IEB.ANO$predict<-(backtransform.moments(lambda=lambda.IEB.ANO,mean=kc.IEB.ANO$predict,variance=kc.IEB.ANO$krige.var)$mean)-5
-(1-kc.IEB.ANO$predict)-kc.IEB.ANO$IESpredict == 0
-kc.IEB.ANO$IESpredict <- 1-kc.IEB.ANO$predict
-
-IEBANO_krige <- cbind(grid*1000,kc.IEB.ANO$predict)
-write.table(IEBANO_krige,"IEBANO.ascii",col.names = F,row.names=F,quote=F)
-
-IESANO_krige <- cbind(grid*1000,kc.IEB.ANO$IESpredict)
-write.table(IESANO_krige,"IESANO.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.IEB.ANO$predict)
 
-postscript("Figuras/IEB_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+agl <- function(dados){
+    acre <- exp(data.frame(dados,0))
+    compos <- acre/rowSums(acre)
+    return(compos)
+}
+
+kc_comp <- agl(kc.IEB.ANO$predict)
+summary(kc_comp)
+
+##kc.IEB.ANO$predict<-(backtransform.moments(lambda=lambda.IEB.ANO,mean=kc.IEB.ANO$predict,variance=kc.IEB.ANO$krige.var)$mean)-5
+(1-kc.IEB.ANO$predict)-kc.IEB.ANO$IESpredict == 0
+kc.IEB.ANO$IESpredict <- kc_comp[,2]
+kc.IEB.ANO$IEBpredict <- kc_comp[,1]
+
+str(kc.IEB.ANO)
+
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.ANO$IEBpredict)), fname =
+              "IEBANO.tiff", drivername="GTiff")
+
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.ANO$IESpredict)), fname =
+              "IESANO.tiff", drivername="GTiff")
+
+##IEBANO_krige <- cbind(grid*1000,kc.IEB.ANO$predict)
+##write.table(IEBANO_krige,"IEBANO.ascii",col.names = F,row.names=F,quote=F)
+## 
+##IESANO_krige <- cbind(grid*1000,kc.IEB.ANO$IESpredict)
+##write.table(IESANO_krige,"IESANO.ascii",col.names = F,row.names=F,quote=F)
+
+summary(kc.IEB.ANO$predict)
+
+pdf("Figuras/IEB_ANO.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
 
 image(kc.IEB.ANO,val=kc.IEB.ANO$predict,col=brewer.pal(9,"Blues"),x.leg=c(250,450),y.leg=c(6850,6860),xlim = c(200,800),ylim = c(6725,7200), xlab = "Longitude (km)",ylab = "Latitude (km)")
 contour(kc.IEB.ANO, add=T, nlev=21)
@@ -315,6 +348,11 @@ dev.off()
 xv.IEB.ANO<-xvalid(IEB.ANO.geo,model=IEB.ANOlf3$exp)
 names(xv.IEB.ANO)
 
+(RMSEANO <- sqrt(mean((xv.IEB.ANO$data-xv.IEB.ANO$predicted)^2)))
+(pbiasANO <- (sum(xv.IEB.ANO$predicted-xv.IEB.ANO$data)/sum(xv.IEB.ANO$data))*100)
+
+
+
 plot(xv.IEB.ANO$predicted,xv.IEB.ANO$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
 abline(lm(xv.IEB.ANO$data~xv.IEB.ANO$predicted)$coef[1],lm(xv.IEB.ANO$data~xv.IEB.ANO$predicted)$coef[2])
@@ -327,22 +365,23 @@ plot(xv.IEB.ANO)
 smry(IEB.ANO.geo$data)
 
 
-postscript("Figuras/xv_IEB-ANO.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_IEB-ANO.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
 
-
 plot(xv.IEB.ANO$predicted,xv.IEB.ANO$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
 hist(xv.IEB.ANO$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
-
+embed_fonts("Figuras/xv_IEB-ANO.pdf",outfile = "Figuras/xv_IEB-ANO.pdf")
 ##-----------------------------------------------------------------------------##
+
+
 
 ## Verão
 dir()
@@ -354,7 +393,7 @@ names(dados)
 
 ## Análise exploratória geoestatística
 
-dim(dados)
+names(dados)
 IEB.DJF.geo<-as.geodata(dados,coords.col = 1:2, data.col = 5,borders=T)
 IEB.DJF.geo$borders<-limite
 
@@ -373,11 +412,16 @@ boxcox(IEB.DJF.geo$data~1)
 ##DJF.mu.inv<-(((lambda.mu.DJF*Mu.DJF.geo$data)+1)^(1/lambda.mu.DJF))-5;DJF.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_IEBDJF.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_IEBDJF.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(IEB.DJF.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(IEB.DJF.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(IEB.DJF.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_IEBDJF.pdf",outfile="Figuras/BoxCox_IEBDJF.pdf")
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -459,11 +503,15 @@ IEB.DJF$lf6 <- likfit(IEB.DJF.geo, cov.model="gau", trend =~trend_IEB.DJF[,6]+po
 sort(sapply(IEB.DJF, AIC))
 plot(IEB.DJF.geo,low=T,trend=~trend_IEB.DJF[,18]+poly(trend_IEB.DJF[,6],2))
 
-postscript("Figuras/Vario-IEB_DJF.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-IEB_DJF.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 v.IEB.DJF<-variog(IEB.DJF.geo,max.dist=200,uvec=seq(0, 200, by=15),trend =~trend_IEB.DJF[,18]+poly(trend_IEB.DJF[,6],2))
 plot(v.IEB.DJF,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.IEB.DJF$u,v.IEB.DJF$v))
 dev.off()
+embed_fonts("Figuras/Vario-IEB_DJF.pdf",outfile="Figuras/Vario-IEB_DJF.pdf")
+
+
 
 
 ##-----------------------------------------------------------------------------##
@@ -520,9 +568,11 @@ attributes(kc.IEB.DJF)
 ##kc.IEB.DJF$predict<-(backtransform.moments(lambda=lambda.IEB.DJF,mean=kc.IEB.DJF$predict,variance=kc.IEB.DJF$krige.var)$mean)-5
 kc.IEB.DJF$predict
 
-IEBDJF_krige <- cbind(grid*1000,kc.IEB.DJF$predict)
-write.table(IEBDJF_krige,"IEBDJF.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.DJF[1])), fname =
+              "IEBDJF.tiff", drivername="GTiff")
 
+##IEBDJF_krige <- cbind(grid*1000,kc.IEB.DJF$predict)
+##write.table(IEBDJF_krige,"IEBDJF.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.IEB.DJF$predict)
 
@@ -553,6 +603,10 @@ dev.off()
 xv.IEB.DJF<-xvalid(IEB.DJF.geo,model=IEB.DJFlf3$exp)
 names(xv.IEB.DJF)
 
+(RMSEDJF <- sqrt(mean((xv.IEB.DJF$data-xv.IEB.DJF$predicted)^2)))
+(pbiasDJF <- (sum(xv.IEB.DJF$predicted-xv.IEB.DJF$data)/sum(xv.IEB.DJF$data))*100)
+gof(xv.IEB.DJF$data,xv.IEB.DJF$predicted)
+
 plot(xv.IEB.DJF$predicted,xv.IEB.DJF$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
 abline(lm(xv.IEB.DJF$data~xv.IEB.DJF$predicted)$coef[1],lm(xv.IEB.DJF$data~xv.IEB.DJF$predicted)$coef[2])
@@ -565,21 +619,20 @@ plot(xv.IEB.DJF)
 smry(IEB.DJF.geo$data)
 
 
-postscript("Figuras/xv_IEB-DJF.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_IEB-DJF.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
 
-
 plot(xv.IEB.DJF$predicted,xv.IEB.DJF$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
 hist(xv.IEB.DJF$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
-
+embed_fonts("Figuras/xv_IEB-DJF.pdf",outfile = "Figuras/xv_IEB-DJF.pdf")
 ##-----------------------------------------------------------------------------##
 
 ## Outono
@@ -611,11 +664,16 @@ boxcox(IEB.MAM.geo$data~1)
 ##MAM.mu.inv<-(((lambda.mu.MAM*Mu.MAM.geo$data)+1)^(1/lambda.mu.MAM))-5;MAM.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
 
-postscript("Figuras/BoxCox_IEBMAM.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/BoxCox_IEBMAM.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
+
 par(mfrow = c(1,2))
 hist(IEB.MAM.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(IEB.MAM.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(IEB.MAM.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_IEBMAM.pdf",outfile="Figuras/BoxCox_IEBMAM.pdf")
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -697,12 +755,13 @@ IEB.MAM$lf6 <- likfit(IEB.MAM.geo, cov.model="gau", trend =~trend_IEB.MAM[,16]+p
 sort(sapply(IEB.MAM, AIC))
 plot(IEB.MAM.geo,low=T,trend=~poly(trend_IEB.MAM[,18],2)+poly(trend_IEB.MAM[,6],2))
 
-postscript("Figuras/Vario-IEB_MAM.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-IEB_MAM.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 v.IEB.MAM<-variog(IEB.MAM.geo,max.dist=200,uvec=seq(0, 200, by=15),trend =~poly(trend_IEB.MAM[,18],2)+poly(trend_IEB.MAM[,6],2))
 plot(v.IEB.MAM,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.IEB.MAM$u,v.IEB.MAM$v))
 dev.off()
-
+embed_fonts("Figuras/Vario-IEB_MAM.pdf",outfile = "Figuras/Vario-IEB_MAM.pdf")
 
 ##-----------------------------------------------------------------------------##
 ## Melhor modelo trend=~Prec_media+Param_MAM.sigma
@@ -758,10 +817,11 @@ attributes(kc.IEB.MAM)
 ##kc.IEB.MAM$predict<-(backtransform.moments(lambda=lambda.IEB.MAM,mean=kc.IEB.MAM$predict,variance=kc.IEB.MAM$krige.var)$mean)-5
 kc.IEB.MAM$predict
 
-IEBMAM_krige <- cbind(grid*1000,kc.IEB.MAM$predict)
-write.table(IEBMAM_krige,"IEBMAM.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.MAM[1])), fname =
+              "IEBMAM.tiff", drivername="GTiff")
 
-
+##IEBMAM_krige <- cbind(grid*1000,kc.IEB.MAM$predict)
+##write.table(IEBMAM_krige,"IEBMAM.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.IEB.MAM$predict)
 
@@ -792,6 +852,10 @@ dev.off()
 xv.IEB.MAM<-xvalid(IEB.MAM.geo,model=IEB.MAMlf4$exp)
 names(xv.IEB.MAM)
 
+(RMSEMAM <- sqrt(mean((xv.IEB.MAM$data-xv.IEB.MAM$predicted)^2)))
+(pbiasMAM <- (sum(xv.IEB.MAM$predicted-xv.IEB.MAM$data)/sum(xv.IEB.MAM$data))*100)
+gof(xv.IEB.MAM$predicted,xv.IEB.MAM$data)
+
 plot(xv.IEB.MAM$predicted,xv.IEB.MAM$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
 abline(lm(xv.IEB.MAM$data~xv.IEB.MAM$predicted)$coef[1],lm(xv.IEB.MAM$data~xv.IEB.MAM$predicted)$coef[2])
@@ -804,20 +868,20 @@ plot(xv.IEB.MAM)
 smry(IEB.MAM.geo$data)
 
 
-postscript("Figuras/xv_IEB-MAM.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_IEB-MAM.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
 
-
 plot(xv.IEB.MAM$predicted,xv.IEB.MAM$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
 hist(xv.IEB.MAM$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
+embed_fonts("Figuras/xv_IEB-MAM.pdf",outfile = "Figuras/xv_IEB-MAM.pdf")
 
 ##-----------------------------------------------------------------------------##
 
@@ -849,12 +913,16 @@ boxcox(IEB.JJA.geo$data~1)
 ##Mu.JJA.geo$data<-(((JJA.mu^(lambda.mu.JJA)) - 1)/lambda.mu.JJA);Mu.JJA.geo$data #normalizando - (X^lambda.mu.JJA)-1/lambda.mu.JJA
 ##JJA.mu.inv<-(((lambda.mu.JJA*Mu.JJA.geo$data)+1)^(1/lambda.mu.JJA))-5;JJA.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
+pdf("Figuras/BoxCox_IEBJJA.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
 
-postscript("Figuras/BoxCox_IEBJJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
 par(mfrow = c(1,2))
 hist(IEB.JJA.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(IEB.JJA.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(IEB.JJA.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_IEBJJA.pdf",outfile="Figuras/BoxCox_IEBJJA.pdf")
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -936,11 +1004,14 @@ IEB.JJA$lf6 <- likfit(IEB.JJA.geo, cov.model="gau", trend =~trend_IEB.JJA[,6]+po
 sort(sapply(IEB.JJA, AIC))
 plot(IEB.JJA.geo,low=T,trend=~trend_IEB.JJA[,18]+poly(trend_IEB.JJA[,6],2))
 
-postscript("Figuras/Vario-IEB_JJA.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+
+pdf("Figuras/Vario-IEB_JJA.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 v.IEB.JJA<-variog(IEB.JJA.geo,max.dist=200,uvec=seq(0, 200, by=15),trend =~poly(trend_IEB.JJA[,18],2)+poly(trend_IEB.JJA[,6],2))
 plot(v.IEB.JJA,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.IEB.JJA$u,v.IEB.JJA$v))
 dev.off()
+embed_fonts("Figuras/Vario-IEB_JJA.pdf",outfile = "Figuras/Vario-IEB_JJA.pdf")
 
 
 ##-----------------------------------------------------------------------------##
@@ -997,8 +1068,11 @@ attributes(kc.IEB.JJA)
 ##kc.IEB.JJA$predict<-(backtransform.moments(lambda=lambda.IEB.JJA,mean=kc.IEB.JJA$predict,variance=kc.IEB.JJA$krige.var)$mean)-5
 kc.IEB.JJA$predict
 
-IEBJJA_krige <- cbind(grid*1000,kc.IEB.JJA$predict)
-write.table(IEBJJA_krige,"IEBJJA.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.JJA[1])), fname =
+              "IEBJJA.tiff", drivername="GTiff")
+
+##IEBJJA_krige <- cbind(grid*1000,kc.IEB.JJA$predict)
+##write.table(IEBJJA_krige,"IEBJJA.ascii",col.names = F,row.names=F,quote=F)
 
 summary(kc.IEB.JJA$predict)
 
@@ -1029,6 +1103,10 @@ dev.off()
 xv.IEB.JJA<-xvalid(IEB.JJA.geo,model=IEB.JJAlf4$exp)
 names(xv.IEB.JJA)
 
+(RMSEJJA <- sqrt(mean((xv.IEB.JJA$data-xv.IEB.JJA$predicted)^2)))
+(pbiasJJA <- (sum(xv.IEB.JJA$predicted-xv.IEB.JJA$data)/sum(xv.IEB.JJA$data))*100)
+
+
 plot(xv.IEB.JJA$predicted,xv.IEB.JJA$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
 abline(lm(xv.IEB.JJA$data~xv.IEB.JJA$predicted)$coef[1],lm(xv.IEB.JJA$data~xv.IEB.JJA$predicted)$coef[2])
@@ -1041,21 +1119,19 @@ plot(xv.IEB.JJA)
 smry(IEB.JJA.geo$data)
 
 
-postscript("Figuras/xv_IEB-JJA.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_IEB-JJA.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
 plot(xv.IEB.JJA$predicted,xv.IEB.JJA$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
 hist(xv.IEB.JJA$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
-
+embed_fonts("Figuras/xv_IEB-JJA.pdf",outfile = "Figuras/xv_IEB-JJA.pdf")
 ##-----------------------------------------------------------------------------##
 
 ## Primavera
@@ -1086,12 +1162,16 @@ boxcox(IEB.SON.geo$data~1)
 ##Mu.SON.geo$data<-(((SON.mu^(lambda.mu.SON)) - 1)/lambda.mu.SON);Mu.SON.geo$data #normalizando - (X^lambda.mu.SON)-1/lambda.mu.SON
 ##SON.mu.inv<-(((lambda.mu.SON*Mu.SON.geo$data)+1)^(1/lambda.mu.SON))-5;SON.mu.inv #inverter e diminuir com 5 para encontrar a varivel original
 
+pdf("Figuras/BoxCox_IEBSON.pdf",onefile = T,family="CM Roman", width=18/2.54, height=13/2.54,paper = "special")
 
-postscript("Figuras/BoxCox_IEBSON.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
 par(mfrow = c(1,2))
 hist(IEB.SON.geo$data,main="", xlab="",ylab = "Frequência")
-boxcox(IEB.SON.geo$data~1,ylab = "Log-Verossimilhança") 
+mtext("(a)",line = 1,cex = 1.5,adj=0)
+
+boxcox(IEB.SON.geo$data~1,lambda = seq(-3,3,l=20),ylab = "Log-Verossimilhança")
+mtext("(b)",line = 1,cex = 1.5,adj=0)
 dev.off()
+embed_fonts("Figuras/BoxCox_IEBSON.pdf",outfile="Figuras/BoxCox_IEBSON.pdf")
 
 #-----------------------------------------------------------------------------
 ##-----------------------------------------------------------------------------
@@ -1174,11 +1254,13 @@ IEB.SON$lf6 <- likfit(IEB.SON.geo, cov.model="gau", trend =~trend_IEB.SON[,6]+po
 sort(sapply(IEB.SON, AIC))
 plot(IEB.SON.geo,low=T,trend=~poly(trend_IEB.SON[,18],2)+poly(trend_IEB.SON[,6],2))
 
-postscript("Figuras/Vario-IEB_SON.eps",onefile = T,horizontal = F, width=15/2.54, height=15/2.54,paper = "special")
+pdf("Figuras/Vario-IEB_SON.pdf",onefile = T, width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 v.IEB.SON<-variog(IEB.SON.geo,max.dist=200,uvec=seq(0, 200, by=15),trend =~poly(trend_IEB.SON[,18],2)+poly(trend_IEB.SON[,6],2))
 plot(v.IEB.SON,xlab="Distância (km)",ylab=expression(gamma(u)))
 lines(lowess(v.IEB.SON$u,v.IEB.SON$v))
 dev.off()
+embed_fonts("Figuras/Vario-IEB_SON.pdf",outfile = "Figuras/Vario-IEB_SON.pdf")
 
 
 ##-----------------------------------------------------------------------------##
@@ -1235,8 +1317,11 @@ attributes(kc.IEB.SON)
 ##kc.IEB.SON$predict<-(backtransform.moments(lambda=lambda.IEB.SON,mean=kc.IEB.SON$predict,variance=kc.IEB.SON$krige.var)$mean)-5
 kc.IEB.SON$predict
 
-IEBSON_krige <- cbind(grid*1000,kc.IEB.SON$predict)
-write.table(IEBSON_krige,"IEBSON.ascii",col.names = F,row.names=F,quote=F)
+writeGDAL(SpatialPixelsDataFrame(grid*1000, data = as.data.frame(kc.IEB.SON[1])), fname =
+              "IEBSON.tiff", drivername="GTiff")
+
+##IEBSON_krige <- cbind(grid*1000,kc.IEB.SON$predict)
+##write.table(IEBSON_krige,"IEBSON.ascii",col.names = F,row.names=F,quote=F)
 
 
 summary(kc.IEB.SON$predict)
@@ -1268,6 +1353,11 @@ dev.off()
 xv.IEB.SON<-xvalid(IEB.SON.geo,model=IEB.SONlf4$exp)
 names(xv.IEB.SON)
 
+(RMSESON <- sqrt(mean((xv.IEB.SON$data-xv.IEB.SON$predicted)^2)))
+(pbiasSON <- (sum(xv.IEB.SON$predicted-xv.IEB.SON$data)/sum(xv.IEB.SON$data))*100)
+gof(xv.IEB.SON$predicted,xv.IEB.SON$data)
+
+
 plot(xv.IEB.SON$predicted,xv.IEB.SON$data,xlim=c(-5,-3),ylim=c(-5,-3))
 abline(0,1)
 abline(lm(xv.IEB.SON$data~xv.IEB.SON$predicted)$coef[1],lm(xv.IEB.SON$data~xv.IEB.SON$predicted)$coef[2])
@@ -1280,19 +1370,17 @@ plot(xv.IEB.SON)
 smry(IEB.SON.geo$data)
 
 
-postscript("Figuras/xv_IEB-SON.eps",onefile = T, horizontal = F, width=25/2.54, height=15/2.54,paper = "special")
-
+pdf("Figuras/xv_IEB-SON.pdf",onefile = T,  width=18/2.54, height=13/2.54,paper =
+        "special",family = "CM Roman")
 
 par(mfrow = c(1,2))
-
-
 plot(xv.IEB.SON$predicted,xv.IEB.SON$std.error,ylim = c(-3,3), ylab="Resíduos Padronizados", xlab = "Valores Preditos")
 abline(h=0)
-#mtext("(a)",cex=1.2,adj=0,line=1)
+mtext("(a)",cex=1.5,adj=0,line=1)
 
 hist(xv.IEB.SON$std.error,breaks = ,freq = F,xlim=c(-3,3), main="", xlab="Resíduos Padronizados",ylab = "Densidade")
-#mtext("(b)",cex=1.2,adj=0,line=1)
+mtext("(b)",cex=1.5,adj=0,line=1)
 
 dev.off()
-
+embed_fonts("Figuras/xv_IEB-SON.pdf",outfile = "Figuras/xv_IEB-SON.pdf")
 ##-----------------------------------------------------------------------------##
