@@ -3,7 +3,8 @@
 library(hydroTSM)
 library(mtsdi)
 library(hydroGOF)
-library(hydroPSO)
+library(extrafont)
+loadfonts()
 
 
 ##rm(list = ls())
@@ -22,9 +23,9 @@ head(Peixe)
 summary(Peixe)
 hydropairs(as.data.frame(Peixe),met="spear")
 
-Pelotas<-read.zoo("Pelotas-R.csv",format="%d/%m/%Y",sep=";",dec=",", head=T)
+Pelotas<-read.zoo("Pelotas-R.csv",format="%d/%m/%Y",sep=";",dec=",", head=T)[,-6]
 data.pelotas<-seq(as.Date("1977/01/01"),as.Date("2014/07/31"),"day")
-areas.pelotas<-c(550,1170,2820,533,1820,1120)
+areas.pelotas<-c(550,1170,2820,533,1820,1120)[,-6]
 head(Pelotas)
 summary(Pelotas)
 hydropairs(as.data.frame(Pelotas),met="spear")
@@ -106,7 +107,7 @@ CubataoS <- window(CubataoS,end=as.Date("2000/12/31"))
 data.CubataoS<-seq(as.Date("1951/01/01"),as.Date("2000/12/31"),"day")
 areas.CubataoS <-c(522,400)[-1]
 head(CubataoS)
-names(CubataoS)
+
 summary(CubataoS)
 hydropairs(as.data.frame(CubataoS),met="spear")
 plot(CubataoS)
@@ -139,6 +140,33 @@ areas.Chapeco <-c(65,1660,418,5550,266,1010,642,740,8240,1840)[-1]
 head(Chapeco)
 summary(Chapeco)
 hydropairs(as.data.frame(Chapeco),met="spear")
+
+Todas <- cbind(Canoas,Pelotas,Peixe,Itajai,Itapocu,Canoinhas,Antas,Negro,Ararangua,
+               Peperi,Tubarão,CubataoN,CubataoS,Irani,Mampituba,Tijucas,Chapeco)
+
+dim(Todas)
+names(Todas)[c(43,66,67,71)] <- c("E65180000","E84100000","E82270050","E84970000")
+
+pdf("Figuras/Estat_dados.pdf",onefile = T, width=27/2.54, height=35/2.54,paper = "special",colormodel="grey",family
+    = "CM Roman")
+
+#par(mar=c(2.3,2.3,.5,.5))
+mat <- matrixplot(dwi(Todas, var.type="Days"),ColorRamp="Temperature",aspect=1.5,
+           colorkey=list(labels=list(cex=1.5)))
+
+str(mat)
+
+data <- as.character(seq(1929,2009,5))
+space <- matrix(rep("",4*length(data)),nrow=length(data),ncol=4)
+
+mat$x.scales$labels <- c(as.vector(t(cbind(data,space))),2014)
+mat$x.scales$cex <- c(1.2,1.2)
+mat$y.scales$cex <- c(1.2,1.2)
+
+plot(mat)
+
+dev.off()
+embed_fonts("Figuras/Estat_dados.pdf",outfile = "Figuras/Estat_dados.pdf")
 
 
 par(mar=c(2.3,2.3,.5,.5))

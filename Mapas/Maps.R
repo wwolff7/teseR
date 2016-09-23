@@ -184,6 +184,37 @@ text(7.18e5, 6.77e6, "Oceano atlântico", cex= 1,font=2)
 dev.off()
 embed_fonts("Figuras/Estat-FluviDEM.pdf",outfile = "Figuras/Estat-FluviDEM.pdf")
 
+
+pdf("Figuras/MacroBHs.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
+    = "CM Roman")
+
+#plot(Hidro,col="lightblue",axes = T,asp=1)
+plot(MBacias,lty=2,axes = T,asp=1,border="black")
+plot(limite,add=T,cex=2)
+points(FluviEST,col="grey",pch=19)
+text(coordinates(MBacias)[-c(16,20),], labels=as.character(MBacias$bacia)[-c(16,20)], cex=0.7,font=2,col="black")
+text(coordinates(MBacias)[c(16,20),]*0.998, labels=as.character(MBacias$bacia)[c(16,20)], cex=0.7,font=2,col="black")
+##text(coordinates(FluviEST), labels=as.character(FluviEST$Estação), cex=0.7,font=2,col="grey")
+
+## colocar labels 
+SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
+SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("transparent", "black"), plot.grid= F)
+
+text(5.5e5, 6.72e6, "0", cex= 0.8)
+text(7.5e5, 6.72e6, "200 km", cex= 0.8)
+
+
+legend(2e5,6.785e6, legend=c("Estado de Santa Catarina","Macrobacias","Estações Fluviométricas","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
+    title="Legenda", bty="n", inset=0.05,
+    lty=c(1,2,NA,NA,NA),
+    col=c(1,1, "grey",NA,NA),cex=0.8,
+    pch=c(NA,NA,19,NA,NA))
+
+dev.off()
+embed_fonts("Figuras/MacroBHs.pdf",outfile = "Figuras/MacroBHs.pdf")
+
+
+
 pdf("Figuras/QmANO.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family= "CM Roman")
 
 image(QmANO,col=color_hidro,asp = 1,xlab = "",ylab = "")
@@ -983,30 +1014,6 @@ legend(2e5,6.815e6, legend=c("Estado de Santa Catarina","Hidrografia","Bacias Hi
 
 dev.off()
 embed_fonts("Figuras/BHs.pdf",outfile = "Figuras/BHs.pdf")
-
-pdf("Figuras/MacroBHs.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
-    = "CM Roman")
-
-plot(Hidro,col="lightblue",axes = T,asp=1)
-plot(MBacias,lty=2,add=T,border="red")
-plot(limite,add=T,cex=2)
-text(getSpPPolygonsLabptSlots(MBacias), labels=as.character(MBacias$bacia), cex=0.7,font=2)
-
-## colocar labels 
-SpatialPolygonsRescale(layout.north.arrow(1), offset= c(2.5e5,7.13e6), scale = 5e4, plot.grid=F)
-SpatialPolygonsRescale(layout.scale.bar(), offset= c(5.5e5,6.7e6), scale= 2e5, fill= c("transparent", "black"), plot.grid= F)
-
-text(5.5e5, 6.72e6, "0", cex= 0.8)
-text(7.5e5, 6.72e6, "200 km", cex= 0.8)
-
-
-legend(2e5,6.785e6, legend=c("Estado de Santa Catarina","Hidrografia","Bacias Hidrográficas","Sistemas de Coordenadas Projetadas UTM","Datum: SAD/69 Zonas 22S"),
-    title="Legenda", bty="n", inset=0.05,
-    lty=c(1,1,2,NA,NA),
-    col=c(1,"lightblue", "red",NA,NA),cex=0.8)
-
-dev.off()
-embed_fonts("Figuras/MacroBHs.pdf",outfile = "Figuras/MacroBHs.pdf")
 
 pdf("Figuras/Estat-Pluvi.pdf",onefile = T, width=18/2.54, height=18/2.54,paper = "special",family
     = "CM Roman")

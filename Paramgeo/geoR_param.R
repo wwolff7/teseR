@@ -446,7 +446,6 @@ Mu.ANO[[i]] <- likfit(Mu.ANO.geo, cov.model="gau", trend =~trend_Mu.ANO[,i],ini=
 Mu.ANO[[ncol(trend_Mu.ANO)+1]] <- likfit(Mu.ANO.geo, cov.model="gau",ini=c(0.04,23.35), nug=0.02,)
 }
 
-
 sapply(Mu.ANO, AIC)
 
 names(trend_Mu.ANO)

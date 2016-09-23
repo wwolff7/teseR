@@ -9,7 +9,7 @@ library(VGAM)
 library(actuar)
 library(ADGofTest)
 library(EcoHydRology)
-citation("fitdistrplus")
+citation("hydroGOF")
 options(OutDec=",",digits = 7)
 
 ## função simpson, usada para calcular integrais numericamente
@@ -82,7 +82,7 @@ Qb.PeixeJJA <- lapply(PeixeJJA,FUN = function(x) BaseflowSeparation(x)[,1])
 Qb.PeixeSON <- lapply(PeixeSON,FUN = function(x) BaseflowSeparation(x)[,1])
 
 ## Hidrografa
-hydrograph(streamflow = as.data.frame(PeixeMAM)[,1],streamflow2=Qb.PeixeMAM$E72870000,timeSeries = data.peixe)
+hydrograph(streamflow = as.data.frame(Peixe)[,1],streamflow2=Qb.Peixe$E72870000,timeSeries = data.peixe)
 
 ## Splines
 Q_peixe_sp <- lapply(Peixe,FUN = function(x) splinefun(x_peixe,x))
@@ -97,6 +97,14 @@ VT_peixe<- c()
 for(i in 1:ncol(Peixe)){
     VT_peixe[i] <- simpson(function(x) Q_peixe_sp[[i]](x),min(x_peixe),max(x_peixe),n=100000)
 }
+## Teste com função integrate do R 
+VT_peixe1<- c()
+for(i in 1:ncol(Peixe)){
+    VT_peixe1[i] <- integrate(Q_peixe_sp[[i]],lower=min(x_peixe),upper=max(x_peixe),rel.tol=.Machine$double.eps^.05)
+}
+
+
+
 VT_peixeDJF<- c()
 for(i in 1:ncol(PeixeDJF)){
     VT_peixeDJF[i] <- simpson(function(x) Q_peixeDJF_sp[[i]](x),min(x_peixeDJF),max(x_peixeDJF),n=100000)
@@ -1612,7 +1620,7 @@ x_cubataoSMAM <- c(1:length(CubataoSMAM))
 x_cubataoSJJA <- c(1:length(CubataoSJJA)) 
 x_cubataoSSON <- c(1:length(CubataoSSON)) 
 
-## Vazão e base
+## Vazão de base
 Qb.CubataoS <- BaseflowSeparation(streamflow = as.data.frame(CubataoS)[,1])[,1]
 Qb.CubataoSDJF <- BaseflowSeparation(streamflow = as.data.frame(CubataoSDJF)[,1])[,1]
 Qb.CubataoSMAM <- BaseflowSeparation(streamflow = as.data.frame(CubataoSMAM)[,1])[,1]
